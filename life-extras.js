@@ -138,16 +138,17 @@ function renderSchool(g){
  const current=g.age<=17&&!s.finished;
  const teachers=schoolPeople.filter(p=>p.role.toLowerCase().includes('professor'));
  const mates=schoolPeople.filter(p=>p.role==='Colega'||p.role==='Amizade').slice(0,8);
- const personCard=p=>'<div class="school-person"><div class="school-icon">'+clean(p.emoji)+'</div><div><strong>'+clean(p.name)+'</strong><small>'+clean(p.role)+' · Vínculo '+Math.round(p.bond)+'/100</small></div>'+
+ const personCard=p=>'<div class="school-person"><div class="school-icon portrait-holder">'+(window.CaminhosWorld?.portrait(p.name,p.role,p.id)||clean(p.emoji))+'</div><div><strong>'+clean(p.name)+'</strong><small>'+clean(p.role)+' · Vínculo '+Math.round(p.bond)+'/100</small></div>'+
  (current?'<button type="button" class="secondary-button" data-life-extra="talk" data-person="'+Number(p.id)+'" '+(g.actions<=0?'disabled':'')+'>Conversar</button>':'')+'</div>';
  let out=displayTitle('🏫 Minha escola',current?'Colegas, professores, aprendizado e acontecimentos ao longo do ano.':'Recordações da sua vida escolar.');
+ if(!current&&g.age>=18)out+=window.CaminhosPaths?.futureChoice(g)||'';
  out+='<div class="card"><div class="school-top"><span>📚 '+clean(s.name)+'</span><strong>'+lifeStageSchool(g)+'</strong></div><div class="school-metrics">'+
  '<div><small>Média geral</small><strong>'+Math.round(s.average)+'/100</strong></div>'+
  '<div><small>Comportamento</small><strong>'+Math.round(s.discipline)+'/100</strong></div>'+
  '<div><small>Destaques</small><strong>'+Math.round(s.awards)+'</strong></div></div></div>';
  if(current){
    const available=g.actions>0&&g.alive&&!g.pendingEvent;
-   const options=[['study','📖 Estudar para a prova'],['homework','📝 Fazer lição'],['project','🔬 Participar de projeto'],['friends','🤝 Brincar com os colegas'],['teacher','🙋 Pedir ajuda ao professor'],['club','🎭 Clube escolar']];
+   const options=[['study','📖 Estudar para a prova'],['homework','📝 Fazer lição'],['project','🔬 Participar de projeto'],['friends','🤝 Brincar com os colegas'],['teacher','🙋 Pedir ajuda ao professor'],['club','🎭 Clube escolar'],...(g.age>=15?[['vestibular','📚 Preparação para faculdade']]:[])];
    out+='<div class="section-title">Vida escolar <small>'+g.actions+' ações restantes</small></div><div class="school-actions">'+
     options.map(([id,label])=>'<button type="button" class="secondary-button" data-life-extra="school" data-id="'+id+'" '+(!available?'disabled':'')+'>'+label+'</button>').join('')+'</div>';
    if(g.pendingEvent)out+='<div class="notice">Resolva a decisão pendente para realizar atividades escolares.</div>';
@@ -162,6 +163,7 @@ function schoolAction(g,id,personId){
  if(!g.alive||g.age<4||g.age>=18)return showToast('A escola é acessível dos 4 aos 17 anos.');
  if(g.actions<=0)return showToast('Suas ações acabaram. Avance o ano.');
  if(g.pendingEvent)return showEvent();
+ if(g.extra.prison>0)return showToast('Atividades escolares indisponíveis durante a prisão.');
  const s=g.extra.school;
  let title='',desc='',delta={},relationship=null;
  const classmates=g.people.filter(p=>p.role==='Colega');
@@ -188,6 +190,9 @@ function schoolAction(g,id,personId){
    const t=choose(teachers);if(t)t.bond=clamp(t.bond+rand(5,10));
    s.average=clamp(s.average+rand(2,6));delta={inteligencia:5,disciplina:2};
    title='Ajuda do professor';desc='Um professor explicou a matéria de um jeito diferente.';
+ }else if(id==='vestibular'){
+   if(g.age<15)return;s.average=clamp(s.average+rand(4,8));
+   delta={inteligencia:7,disciplina:6};title='Preparação para faculdade';desc='Você estudou com foco no ingresso ao ensino superior.';
  }else if(id==='club'){
    s.events++;delta={carisma:5,felicidade:5,disciplina:2};
    title='Clube escolar';desc='Você participou de um clube de arte, esporte ou ciências.';
@@ -240,6 +245,7 @@ function assetsAction(g,action,itemId,assetId){
  if(!g.alive)return showToast('Esta vida já terminou.');
  if(g.age<18)return showToast('Disponível a partir dos 18 anos.');
  if(g.pendingEvent)return showEvent();
+ if(g.extra.prison>0)return showToast('Não é possível negociar bens na prisão.');
  const inv=owned(g),e=g.extra;
  if(action==='buy'){
    const p=item(itemId);if(!p)return;
