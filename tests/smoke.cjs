@@ -81,7 +81,7 @@ code('game=null;game=restore();render()');
 assert.equal(code('game.extra.assetInventory.length'),2,'backwards-compatible restore');
 assert.ok(code('window.CaminhosAchievements.count(game)')>0,'achievements still work');
 const html=fs.readFileSync('index.html','utf8');
-assert.match(html,/data-dock="more"/);
+assert.doesNotMatch(html,/data-dock="more"/,"More is present only in the top header");
 assert.match(html,/id="homeShortcut"/);
 assert.doesNotMatch(html,/data-tab="escola"/,"School accessible from career rather than separate top-level tab");
 const css=fs.readFileSync('styles.css','utf8');
