@@ -58,6 +58,21 @@
     ['mansao','Bens','🏰','Vida de luxo','Compre uma mansão.',g=>(g.extra?.assetInventory||[]).some(a=>a.type==='mansao')],
     ['frota','Bens','🚙','Colecionador','Tenha cinco bens simultaneamente.',g=>(g.extra?.assetInventory||[]).length>=5],
     ['multiempresario','Negócios','🏢','Empresário múltiplo','Tenha três empresas ao mesmo tempo.',g=>(g.extra?.assetInventory||[]).filter(a=>['padaria','barbearia','restaurante','mercado','transportadora','hotel','companhia'].includes(a.type)).length>=3],
+    ['novo-curso','Estudos','🎓','Novo curso superior','Matricule-se em uma faculdade.',g=>!!g.university],
+    ['militar-iniciante','Carreira pública','🪖','Vida militar','Ingresse em alguma Força Armada.',g=>['militar_exercito','militar_marinha','militar_aeronautica'].includes(g.job)],
+    ['bombeiros','Carreira pública','🚒','Herói de uniforme','Torne-se bombeiro militar.',g=>g.job==='bombeiro'],
+    ['policia-civil','Carreira pública','🕵️','Investigador do Estado','Torne-se agente da Polícia Civil.',g=>g.job==='policial_civil'],
+    ['policia-federal','Carreira pública','🛡️','Agente federal','Torne-se agente da Polícia Federal.',g=>g.job==='policial_federal'],
+    ['patente','Carreira pública','🎖️','Primeira promoção','Seja promovido na carreira pública.',g=>(g.extra?.publicService?.active?.rank||0)>0],
+    ['marcial','Esportes','🥋','Primeiro tatame','Faça um treino de artes marciais.',g=>Object.values(g.extra?.martialArts||{}).some(x=>x.trainings>0)],
+    ['faixa-preta','Esportes','🥋','Faixa preta','Alcance 97 de habilidade em uma arte marcial.',g=>Object.values(g.extra?.martialArts||{}).some(x=>x.skill>=97)],
+    ['medalha-marcial','Esportes','🏅','Medalha no tatame','Conquiste uma medalha em artes marciais.',g=>Object.values(g.extra?.martialArts||{}).some(x=>x.medals>0)],
+    ['presidente-br','Política','🏛️','Presidente eleito','Vença a eleição presidencial.',g=>(g.extra?.politics2?.experience||[]).includes('presidente')],
+    ['politica-honesta','Política','✅','Servidor íntegro','Alcance integridade política 90.',g=>(g.extra?.politics2?.integrity||0)>=90],
+    ['condenacao','Riscos','⚖️','Consequências legais','Receba uma sentença penal fictícia.',g=>(g.extra?.record||0)>0],
+    ['reintegracao','Riscos','🕊️','Recomeço','Conclua uma pena de prisão fictícia.',g=>(g.extra?.crimeStory?.served||0)>=1&&g.extra?.prison===0],
+    ['pet','Pets','🐾','Novo companheiro','Adote ou compre seu primeiro pet.',g=>(g.extra?.pets||[]).length>=1],
+    ['pet-familia','Pets','🐶','Família animal','Tenha três pets simultaneamente.',g=>(g.extra?.pets||[]).length>=3],
   ];
   const achievements = defs.map(([id,cat,emoji,name,desc,check])=>({id,cat,emoji,name,desc,check}));
   function evaluate(g) {
