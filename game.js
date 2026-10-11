@@ -102,18 +102,78 @@ function startGame(name,city,trait){
  game={version:1,name:name.trim().slice(0,32),city,trait,age:0,stats:{saude:clamp(rand(68,85)+(bonuses.saude||0)),felicidade:clamp(rand(65,82)+(bonuses.felicidade||0)),inteligencia:clamp(rand(38,58)+(bonuses.inteligencia||0)),carisma:clamp(rand(38,59)+(bonuses.carisma||0)),disciplina:clamp(rand(35,55)+(bonuses.disciplina||0))},cash:0,savings:0,job:null,jobYears:0,degree:[],university:null,actions:3,people:[{id:1,name:choose(NAMES),role:'Mãe',emoji:'👩',bond:rand(65,86)},{id:2,name:choose(NAMES),role:'Pai',emoji:'👨',bond:rand(58,85)}],partnerId:null,children:0,properties:0,alive:true,pendingEvent:null,lastAIYear:-1,lastEvent:'Você nasceu em '+city+'. O mundo está à sua espera.',history:[]};
  initExtra();logLine('Um novo começo',game.lastEvent);activeTab='vida';render();showToast('Bem-vindo à sua nova vida!');
 }
-function statChange(delta){for(const k of Object.keys(STAT_LABELS)){if(typeof delta[k]==='number'&&Number.isFinite(delta[k]))game.stats[k]=clamp(game.stats[k]+delta[k])}if(typeof delta.cash==='number'&&Number.isFinite(delta.cash))game.cash=Math.round(game.cash+delta.cash)}
+function statChange(delta){
+ for(const k of Object.keys(STAT_LABELS)){
+  if(typeof delta[k]==='number'&&Number.isFinite(delta[k]))game.stats[k]=clamp(game.stats[k]+delta[k]);
+ }
+ const extra=safeExtra();
+ if(Number.isFinite(delta.aparencia))extra.appearance=clamp((extra.appearance??50)+delta.aparencia);
+ if(Number.isFinite(delta.popularidade))extra.reputation=clamp((extra.reputation??30)+delta.popularidade);
+ if(Number.isFinite(delta.fama))extra.fame=clamp((extra.fame??0)+delta.fama);
+ if(Number.isFinite(delta.cash))game.cash=Math.round(game.cash+delta.cash);
+}
+const CORE_METRICS={
+ felicidade:{title:'Uma pausa para você',name:'Felicidade',icon:'🙂',
+  story:'Depois de uma semana cansativa, um amigo convida você para sair e passar um tempo juntos. O que você vai fazer?',
+  choices:[{text:'Aceitar o convite',delta:{felicidade:10,cash:-40}},{text:'Descansar em casa',delta:{felicidade:4,saude:2}},{text:'Continuar ignorando o descanso',delta:{felicidade:-4}}]},
+ saude:{title:'Cuidando de você',name:'Saúde',icon:'❤️',
+  story:'Você percebeu que não está se sentindo tão bem. Surgiu uma oportunidade de cuidar da saúde. Qual será sua atitude?',
+  choices:[{text:'Procurar atendimento e orientação',delta:{saude:14,cash:-180}},{text:'Descansar e acompanhar os sintomas',delta:{saude:5,felicidade:2}},{text:'Ignorar os sinais do corpo',delta:{saude:-7}}]},
+ inteligencia:{title:'Uma oportunidade de aprender',name:'Inteligência',icon:'🧠',
+  story:'Um curso e uma biblioteca gratuita abriram inscrições em sua região. Você pretende aproveitar?',
+  choices:[{text:'Me dedicar ao aprendizado',delta:{inteligencia:11,felicidade:-2}},{text:'Estudar um pouco por conta própria',delta:{inteligencia:5}},{text:'Deixar os estudos de lado',delta:{inteligencia:-2,felicidade:3}}]},
+ aparencia:{title:'Uma mudança de visual',name:'Aparência',icon:'✨',
+  story:'Você ganhou um vale-presente de uma loja de roupas e acessórios. Talvez seja a hora de renovar seu estilo. O que você vai fazer?',
+  choices:[{text:'Experimentar um novo visual',delta:{aparencia:12,felicidade:3}},{text:'Guardar o vale para outra ocasião',delta:{felicidade:1}},{text:'Escolher algo que não combina com você',delta:{aparencia:-3}}]},
+ popularidade:{title:'A opinião das pessoas',name:'Popularidade',icon:'🗳️',
+  story:'Moradores estão debatendo um problema importante na comunidade. Como você deseja agir?',
+  choices:[{text:'Ouvir as pessoas e apresentar soluções',delta:{popularidade:10,felicidade:2}},{text:'Prestar contas com transparência',delta:{popularidade:6}},{text:'Fazer uma promessa impossível',delta:{popularidade:-10}}]},
+ fama:{title:'Seu nome está em evidência',name:'Fama',icon:'⭐',
+  story:'Uma oportunidade de entrevista e divulgação surgiu para sua carreira. Você vai participar?',
+  choices:[{text:'Dar uma entrevista preparada',delta:{fama:10,felicidade:3}},{text:'Agradecer e seguir trabalhando',delta:{fama:3}},{text:'Criar uma polêmica para chamar atenção',delta:{fama:4,felicidade:-8}}]}
+};
+function coreValue(key){
+ if(key==='aparencia')return safeExtra().appearance??50;
+ if(key==='popularidade')return safeExtra().reputation??30;
+ if(key==='fama')return safeExtra().fame??0;
+ return game?.stats?.[key]??0;
+}
+function makeAttributeEvent(key){
+ const idea=CORE_METRICS[key];
+ if(!idea)return null;
+ return {source:'attribute',attribute:key,title:idea.title,
+   story:idea.story,choices:idea.choices.map(c=>({...c,delta:{...c.delta}}))};
+}
+function openAttributeOpportunity(key){
+ if(!game?.alive)return;
+ if(game.pendingEvent)return showEvent();
+ const applicable=key==='popularidade'?(!!safeExtra().office||game.job==='politico'):
+ key==='fama'?['ator','diretor','musico','influencer','atleta','lutador'].includes(game.job):true;
+ if(!applicable||!CORE_METRICS[key])return;
+ game.pendingEvent=makeAttributeEvent(key);save();showEvent();
+}
+function randomAttributeEvent(){
+ const candidates=['felicidade','saude','inteligencia','aparencia'].filter(k=>coreValue(k)<45);
+ if((safeExtra().office||game.job==='politico')&&coreValue('popularidade')<45)candidates.push('popularidade');
+ if(['ator','diretor','musico','influencer','atleta','lutador'].includes(game.job)&&coreValue('fama')<45)candidates.push('fama');
+ return candidates.length?makeAttributeEvent(choose(candidates)):null;
+}
 function jobInfo(){return CAREERS.find(c=>c.id===game.job)||null}
 function stage(){return game.age<6?'primeiros anos':game.age<13?'infância':game.age<18?'adolescência':game.age<60?'vida adulta':'maturidade'}
 function avatar(){return game.age<6?'👶':game.age<13?'🧒':game.age<18?'🧑':game.age<60?'🧑‍💼':'🧓'}
 function yearSummary(){const professional=jobInfo();let income=0,expense=0;
- if(game.age>=16&&professional&&!safeExtra().prison){income=Math.round((window.CaminhosPaths?.salary(game)??professional.salary)*(1+Math.min(game.jobYears,15)*.035));game.cash+=income;game.jobYears++}
+ if(game.age>=16&&professional&&!safeExtra().prison){income=Math.round((window.CaminhosPaths?.salary(game)??professional.salary)*(1+Math.min(game.jobYears,15)*.035)*
+ (['ator','diretor','musico','influencer','atleta','lutador'].includes(game.job)?1+(safeExtra().fame||0)/180:1));game.cash+=income;game.jobYears++}
  if(game.age>=18){expense=game.age<23?Math.round(6500+income*.12):Math.round(12500+income*.19);if(game.properties>0)expense+=game.properties*1600;game.cash-=expense}
  if(game.university){game.cash-=6500;game.university.yearsLeft-=1;if(game.university.yearsLeft<=0){const name=DEGREES[game.university.degree];game.degree.push(game.university.degree);game.university=null;logLine('Formatura','Você concluiu a faculdade de '+name+'. Parabéns pela conquista!')}}
  if(game.savings>0){const gain=Math.round(game.savings*.035);game.savings+=gain}
  if(game.age>=70){game.stats.saude=clamp(game.stats.saude-rand(1,4))}
  if(game.age<18)game.stats.inteligencia=clamp(game.stats.inteligencia+rand(0,2));
- annualExtra();window.CaminhosDynasty?.onAnnual(game);window.CaminhosExtras?.annual(game);window.CaminhosPaths?.onAnnual(game);window.CaminhosWorld?.annual(game);game.stats.felicidade=clamp(game.stats.felicidade+rand(-4,3));
+ annualExtra();
+ if(professional&&['ator','diretor','musico','influencer','atleta','lutador'].includes(game.job)&&game.jobYears>0){
+  const x=safeExtra();x.fame=clamp((x.fame||0)+rand(-1,4));
+ }
+ window.CaminhosDynasty?.onAnnual(game);window.CaminhosExtras?.annual(game);window.CaminhosPaths?.onAnnual(game);window.CaminhosWorld?.annual(game);game.stats.felicidade=clamp(game.stats.felicidade+rand(-4,3));
  game.stats.saude=clamp(game.stats.saude+rand(-3,2));
  if(income||expense)logLine('Resumo financeiro do ano',`Você recebeu ${brl(income)} e teve ${brl(expense)} em despesas.`);
  if(game.age===6)logLine('Primeiro dia de aula','Você começou a frequentar a escola. Um mundo de descobertas se abriu.');
@@ -130,7 +190,7 @@ async function aiEvent(){if(!config.enableAI||!config.endpoint)return null;const
  const response=await fetch(config.endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({age:game.age,trait:game.trait,stage:stage(),job:jobInfo()?.name||'Estudante ou sem emprego',stats:safeStats,city:game.city}),signal:ctl.signal});
  if(!response.ok)throw Error('HTTP '+response.status);const data=await response.json();return cleanAIEvent(data)
  }finally{clearTimeout(t)}}
-async function advance(){if(!game||!game.alive||loading)return;if(game.pendingEvent){showEvent();return}loading=true;game.age++;game.actions=3;window.CaminhosSkills?.ensure(game);window.CaminhosEveryday?.annual(game);if(enforceHealthDeath()||!game.alive){save();render();loading=false;showEnd();return}yearSummary();save();render();if(!game.alive){loading=false;showEnd();return}if(game.age===18&&window.CaminhosPaths?.offerGraduation(game)){loading=false;window.CaminhosPaths.openGraduation(game);return}if(Math.random()<.75){let e=null;if(config.enableAI&&config.endpoint){showToast('Criando um novo acontecimento...');try{e=await aiEvent()}catch(err){showToast('IA indisponível. Usando história local.')}}if(!e)e=(Math.random()<.67?window.CaminhosEveryday?.randomEvent(game):null)||offlineEvent();game.pendingEvent=e;save();showEvent()}else{logLine('Mais um ano de vida','Você completou '+game.age+' '+(game.age===1?'ano':'anos')+' e segue construindo seu próprio caminho.')}loading=false;render()}
+async function advance(){if(!game||!game.alive||loading)return;if(game.pendingEvent){showEvent();return}loading=true;game.age++;game.actions=3;window.CaminhosSkills?.ensure(game);window.CaminhosEveryday?.annual(game);if(enforceHealthDeath()||!game.alive){save();render();loading=false;showEnd();return}yearSummary();save();render();if(!game.alive){loading=false;showEnd();return}if(game.age===18&&window.CaminhosPaths?.offerGraduation(game)){loading=false;window.CaminhosPaths.openGraduation(game);return}if(Math.random()<.75){let e=null;if(config.enableAI&&config.endpoint){showToast('Criando um novo acontecimento...');try{e=await aiEvent()}catch(err){showToast('IA indisponível. Usando história local.')}}if(!e)e=(Math.random()<.36?randomAttributeEvent():null)||(Math.random()<.67?window.CaminhosEveryday?.randomEvent(game):null)||offlineEvent();game.pendingEvent=e;save();showEvent()}else{logLine('Mais um ano de vida','Você completou '+game.age+' '+(game.age===1?'ano':'anos')+' e segue construindo seu próprio caminho.')}loading=false;render()}
 function applyChoice(i){
  const event=game?.pendingEvent;if(!event)return;
  const choice=event.choices[i];if(!choice)return;
@@ -154,7 +214,19 @@ function performAction(key){if(safeExtra().prison>0)return showToast('Enquanto e
  if(a.work&&game.job&&count===0){game.jobYears+=.15;if(Math.random()<.22){game.cash+=800;showToast('Você recebeu um bônus de '+brl(800)+'!')}}
  logLine(a.name,'Você decidiu: '+a.name.toLowerCase()+'. Pequenos hábitos fazem uma grande diferença.');save();render()}
 function setJob(id){if(!game?.alive)return;const c=CAREERS.find(x=>x.id===id);if(!c)return;const requirement=jobRequirement(c);if(requirement)return showToast(requirement);if(safeExtra().prison>0)return showToast('Você está cumprindo pena.');window.CaminhosPaths?.leave(game,id);const previous=jobInfo()?.name||'nenhum';game.job=id;game.jobYears=0;const history=(safeExtra().careerHistory||=[]);if(!history.includes(id))history.push(id);logLine('Novo trabalho',`Você deixou ${previous} e começou sua carreira como ${c.name}.`);save();render();showToast('Novo emprego: '+c.name+'!')}
-function jobRequirement(c){if(game.age<c.age)return 'Disponível aos '+c.age+' anos.';if(game.stats[c.stat]<c.min)return 'Requer '+STAT_LABELS[c.stat]+' de '+c.min+' ou mais.';if(c.degree&&!game.degree.includes(c.degree))return 'Exige graduação em '+DEGREES[c.degree]+'.';return window.CaminhosPaths?.jobReason(game,c.id)||''}
+function jobRequirement(c){
+ if(game.age<c.age)return 'Disponível aos '+c.age+' anos.';
+ // Quatro atributos basicos; popularidade e fama sao progresso de carreira.
+ const key=c.id==='politico'?'popularidade':
+ (['ator','influencer'].includes(c.id)?'aparencia':
+  ['policial','militar_exercito','militar_marinha','militar_aeronautica','bombeiro','lutador','atleta'].includes(c.id)?'saude':
+  c.stat==='disciplina'?'inteligencia':c.stat==='carisma'?'felicidade':c.stat);
+ const label=CORE_METRICS[key]?.name||STAT_LABELS[key]||'Desempenho';
+ const threshold=c.id==='politico'?40:c.min;
+ if(coreValue(key)<threshold)return 'Requer '+label+' de '+threshold+' ou mais.';
+ if(c.degree&&!game.degree.includes(c.degree))return 'Exige graduação em '+DEGREES[c.degree]+'.';
+ return window.CaminhosPaths?.jobReason(game,c.id)||'';
+}
 function startUniversity(d){if(safeExtra().prison>0)return showToast('Não pode cursar faculdade enquanto cumpre pena.');if(!safeExtra().school?.finished)return showToast('Conclua primeiro o ensino médio.');if(!game?.alive||game.age<18)return showToast('Você precisa ter 18 anos.');if(game.university)return showToast('Você já está estudando na faculdade.');if(game.degree.includes(d))return showToast('Você já concluiu esse curso.');if(!DEGREES[d])return;if(game.stats.inteligencia<50)return showToast('Você precisa de 50 pontos de inteligência para ingressar.');game.university={degree:d,yearsLeft:4};logLine('Faculdade','Você entrou em '+DEGREES[d]+'. A mensalidade anual é de R$ 6.500 no jogo.');save();render()}
 function romance(){if(safeExtra().prison>0)return showToast('Relacionamentos indisponíveis durante a prisão.');if(game.age<16)return showToast('Relacionamentos românticos disponíveis aos 16 anos.');if(game.partnerId)return showToast('Você já tem um relacionamento.');const p={id:Date.now(),name:choose(NAMES),role:'Namoro',emoji:'💞',bond:rand(52,70)};game.people.push(p);game.partnerId=p.id;logLine('Novo romance','Você conheceu '+p.name+' e os dois começaram a namorar.');save();render()}
 function relationAction(id,action){if(safeExtra().prison>0)return showToast('Visitas indisponíveis durante a prisão.');const p=game.people.find(x=>x.id===id);if(!p)return;if(action==='casar'){if(game.age<18||id!==game.partnerId||p.bond<65)return showToast('Para casar é preciso ter 18 anos e vínculo de 65 ou mais.');if(game.cash<3500)return showToast('Você precisa de R$ 3.500 para o casamento.');game.cash-=3500;p.role='Cônjuge';statChange({felicidade:13});logLine('Casamento','Você se casou com '+p.name+'!')}else if(action==='filho'){if(id!==game.partnerId||game.age<18)return;const childName=window.CaminhosDynasty?.birth(game);if(!childName)game.children++;game.cash-=1200;statChange({felicidade:9});logLine('A família cresceu','Nasceu '+(childName||'seu bebê')+'! Você agora tem '+game.children+' filho(s).');}else if(action==='terminar'){p.role='Ex-relacionamento';game.partnerId=null;statChange({felicidade:-12});logLine('Fim do relacionamento','Você e '+p.name+' decidiram seguir caminhos diferentes.')}else{p.bond=clamp(p.bond+rand(8,13));statChange({felicidade:3});logLine('Laços fortalecidos','Você passou bons momentos com '+p.name+'.')}save();render()}
@@ -252,6 +324,7 @@ function render(){
  $('careerDockIcon').textContent=game.age<18?'🎓':'💼';$('careerDockLabel').textContent=game.age<18?'Escola':'Profissão';
  $('heroName').textContent=game.name;$('avatar').innerHTML=window.CaminhosWorld?.portrait(game.name,'Protagonista',0,true)||avatar();$('lifeStage').textContent=stage().toUpperCase();$('ageLabel').textContent=game.age+' '+(game.age===1?'ano':'anos');$('jobLabel').textContent=jobInfo()?.name||(game.age<18?'Crescendo e aprendendo':'Sem emprego');$('moneyLabel').textContent=brl(game.cash);$('savingsLabel').textContent='Investimentos: '+brl(game.savings);$('yearNumber').innerHTML=game.age+'<span>'+(game.age===1?'ano':'anos')+'</span>';
  $('profileActions').textContent='Atividades livres';$('apLabel').textContent='Ações ilimitadas';$('apDots').innerHTML='';$('lastEvent').textContent=game.lastEvent;
+ $('gameView').classList.toggle('has-career-stat',!!(game.extra?.office||game.job==='politico'||['ator','diretor','musico','influencer','atleta','lutador'].includes(game.job)));
  $('statsStrip').innerHTML=window.CaminhosUI?.renderStats(game)||Object.entries(STAT_LABELS).map(([k,n])=>`<div class="stat-card"><div class="stat-row"><span class="stat-name">${STAT_ICONS[k]} ${n}</span><span class="stat-value">${Math.round(game.stats[k])}</span></div><div class="stat-track"><div class="stat-fill ${STAT_COLORS[k]}" style="width:${game.stats[k]}%"></div></div></div>`).join('');
  document.querySelectorAll('[data-tab]').forEach(btn=>{btn.classList.toggle('active',btn.dataset.tab===activeTab);btn.setAttribute('aria-current',btn.dataset.tab===activeTab?'page':'false')});
  document.querySelectorAll('[data-dock]').forEach(btn=>{const isSelected=btn.dataset.dock===activeTab;btn.classList.toggle('active',isSelected);if(btn.dataset.dock==='advance')btn.disabled=!game.alive||loading;else btn.setAttribute('aria-current',isSelected?'page':'false')});
@@ -260,7 +333,18 @@ function render(){
 }
 function showModal(body){$('modalContent').innerHTML=body;$('overlay').classList.remove('hidden')}
 function hideModal(){$('overlay').classList.add('hidden')}
-function showEvent(){if(!game?.pendingEvent)return;const e=game.pendingEvent;showModal(`<div class="event-icon">${e.source==='ia'?'✳':'✦'}</div><div class="card-kicker">${e.source==='ia'?'HISTÓRIA GERADA COM IA':'ACONTECIMENTO INESPERADO'} • ${game.age} ANOS</div><h2 id="modalTitle">${escapeHTML(e.title)}</h2><p>${escapeHTML(e.story)}</p><div class="section-title">O que você decide fazer?</div>${e.choices.map((c,i)=>`<button class="choice" data-act="choice" data-index="${i}">${i+1}. ${escapeHTML(c.text)} →</button>`).join('')}`)}
+function showEvent(){
+ if(!game?.pendingEvent)return;
+ const e=game.pendingEvent;
+ const att=CORE_METRICS[e.attribute];
+ const statBar=att?'<div class="event-attribute-meter"><span>'+att.icon+' '+att.name+'</span><div class="retro-stat-meter"><span style="width:'+clamp(coreValue(e.attribute))+'%"></span></div><strong>'+Math.round(coreValue(e.attribute))+'%</strong></div>':'';
+ showModal('<div class="'+(att?'attribute-event':'')+'">'+
+ '<div class="event-icon">'+(att?att.icon:e.source==='ia'?'✳':'✦')+'</div>'+
+ '<div class="card-kicker">'+(att?'OPORTUNIDADE · '+att.name.toUpperCase():e.source==='ia'?'HISTÓRIA GERADA COM IA':'ACONTECIMENTO INESPERADO')+' • '+game.age+' ANOS</div>'+
+ '<h2 id="modalTitle">'+escapeHTML(e.title)+'</h2><p>'+escapeHTML(e.story)+'</p>'+statBar+
+ '<div class="section-title">O que você vai fazer?</div>'+e.choices.map((item,i)=>
+ '<button class="choice" data-act="choice" data-index="'+i+'">'+escapeHTML(item.text)+'</button>').join('')+'</div>');
+}
 function showEnd(){
  window.CaminhosDynasty?.recordDeath(game);save();
  const heirs=window.CaminhosDynasty?.candidates(game)||[];
@@ -279,7 +363,7 @@ $('newGameForm').addEventListener('submit',e=>{e.preventDefault();const f=new Fo
 $('nextYear').addEventListener('click',advance);$('openNavigation').addEventListener('click',openMoreMenu);$('homeShortcut').addEventListener('click',()=>{activeTab='vida';render();window.scrollTo({top:0,behavior:'smooth'})});$('openSettings').addEventListener('click',showSettings);$('closeModal').addEventListener('click',hideModal);$('brandHome').addEventListener('click',e=>{e.preventDefault();activeTab='vida';render();window.scrollTo({top:0,behavior:'smooth'})});
 document.addEventListener('submit',e=>{if(e.target.id!=='aiConfigForm')return;e.preventDefault();const endpoint=$('aiEndpoint').value.trim();if(endpoint&&(!/^https:\/\//i.test(endpoint)||endpoint.length>240))return showToast('Use uma URL HTTPS válida para seu Worker.');config.endpoint=endpoint;config.enableAI=$('aiEnabled').checked&&!!endpoint;persistConfig();render();showToast('Configuração da IA salva.')});
 document.addEventListener('change',e=>{if(e.target.id==='importSave')importSave(e.target.files?.[0])});
-document.addEventListener('click',e=>{const tab=e.target.closest('[data-tab]');if(tab){activeTab=tab.dataset.tab;render();return}const b=e.target.closest('[data-act]');if(!b)return;const act=b.dataset.act,id=b.dataset.id,option=b.dataset.option;if(act==='activity')performAction(id);if(act==='job')setJob(id);if(act==='quit-job'){if(confirm('Deseja realmente pedir demissão?')){window.CaminhosPaths?.leave(game);game.job=null;game.jobYears=0;logLine('Mudança de planos','Você decidiu sair do emprego.');render()}}if(act==='university')startUniversity(id);if(act==='romance')romance();if(act==='rel')relationAction(Number(id),option);if(act==='money'){let n=b.dataset.value==='all'?game.savings:Number(b.dataset.value);moneyAction(option,n)}if(act==='choice')applyChoice(Number(b.dataset.index));if(act==='show-event')showEvent();if(act==='tutorial')showTutorial();if(act==='game-settings')showSettings();if(act==='save-now')window.CaminhosCloud?.manualSave();if(act==='export')downloadSave();if(act==='restart')restartLife();if(act==='inherit'){if(!game?.alive&&window.CaminhosDynasty?.chooseHeir(game,Number(id))){save();hideModal();activeTab='vida';render();showToast('🌳 A história continua com '+game.name+'!')}}if(act==='account-achievements')showModal(window.CaminhosAchievements?.render(game)||'Conquistas indisponíveis.');if(act==='ai-now')generateNow()});
+document.addEventListener('click',e=>{const tab=e.target.closest('[data-tab]');if(tab){activeTab=tab.dataset.tab;render();return}const b=e.target.closest('[data-act]');if(!b)return;const act=b.dataset.act,id=b.dataset.id,option=b.dataset.option;if(act==='attribute-boost')openAttributeOpportunity(b.dataset.stat);if(act==='activity')performAction(id);if(act==='job')setJob(id);if(act==='quit-job'){if(confirm('Deseja realmente pedir demissão?')){window.CaminhosPaths?.leave(game);game.job=null;game.jobYears=0;logLine('Mudança de planos','Você decidiu sair do emprego.');render()}}if(act==='university')startUniversity(id);if(act==='romance')romance();if(act==='rel')relationAction(Number(id),option);if(act==='money'){let n=b.dataset.value==='all'?game.savings:Number(b.dataset.value);moneyAction(option,n)}if(act==='choice')applyChoice(Number(b.dataset.index));if(act==='show-event')showEvent();if(act==='tutorial')showTutorial();if(act==='game-settings')showSettings();if(act==='save-now')window.CaminhosCloud?.manualSave();if(act==='export')downloadSave();if(act==='restart')restartLife();if(act==='inherit'){if(!game?.alive&&window.CaminhosDynasty?.chooseHeir(game,Number(id))){save();hideModal();activeTab='vida';render();showToast('🌳 A história continua com '+game.name+'!')}}if(act==='account-achievements')showModal(window.CaminhosAchievements?.render(game)||'Conquistas indisponíveis.');if(act==='ai-now')generateNow()});
 game=restore();if(game)window.CaminhosDynasty?.ensure(game);render();
 
 // Navegação auxiliar e ações dos módulos avançados.
@@ -294,17 +378,16 @@ function showTutorial(){
   ['❤','Saúde','Condição física e bem-estar. Esportes, cuidados pessoais e acontecimentos podem aumentar ou diminuir esse indicador.'],
   ['☀','Felicidade','Satisfação com a vida. Atividades, relações e acontecimentos influenciam o seu humor.'],
   ['◈','Inteligência','Aprendizado e raciocínio. Estudar melhora esse atributo; profissões e faculdade podem exigir níveis altos.'],
-  ['✧','Carisma','Facilidade de interação e comunicação. É útil para conhecer pessoas e para algumas carreiras.'],
-  ['⚡','Disciplina','Constância e dedicação. Ajuda a atender exigências de certas profissões e atividades.']
+  ['✨','Aparência','Como seu visual influencia oportunidades e a confiança pessoal. Você pode trabalhar esse atributo em eventos e escolhas.']
  ];
  const attributes=statInfo.map(function(row){
    return '<div class="tutorial-stat"><span class="tutorial-symbol" aria-hidden="true">'+row[0]+'</span><div><strong>'+row[1]+'</strong><p>'+row[2]+'</p></div></div>';
  }).join('');
  showModal(
   '<div class="card-kicker">MANUAL DO JOGADOR</div><h2 id="modalTitle">📘 Como jogar CAMINHOS</h2>'+
-  '<div class="tutorial-section"><h3>1. Sua história</h3><p>O botão verde <strong>+ Idade</strong> faz o personagem envelhecer um ano. Alguns anos trazem acontecimentos com escolhas que alteram seu futuro. Antes de avançar, você pode usar até <strong>3 ações por ano</strong>.</p></div>'+
-  '<div class="tutorial-section"><h3>2. O que significa cada status?</h3><p>As cinco barras vão de <strong>0 a 100</strong>. Quanto maior o número, maior a característica:</p>'+attributes+'</div>'+
-  '<div class="tutorial-section"><h3>3. Dinheiro e outros indicadores</h3><p><strong>Dinheiro:</strong> saldo disponível para gastos. <strong>Investimentos:</strong> valor reservado, separado do saldo. <strong>Patrimônio:</strong> inclui outros bens. <strong>Relações:</strong> mostram o vínculo com outras pessoas. <strong>Ações restantes:</strong> quantas atividades ainda podem ser feitas antes do próximo ano.</p></div>'+
+  '<div class="tutorial-section"><h3>1. Sua história</h3><p>O botão verde <strong>+ Idade</strong> faz o personagem envelhecer um ano. Alguns anos trazem acontecimentos com escolhas que alteram seu futuro. Você pode praticar atividades livremente ao longo do mesmo ano.</p></div>'+
+  '<div class="tutorial-section"><h3>2. O que significa cada status?</h3><p>As quatro barras principais vão de <strong>0 a 100</strong>. Popularidade e Fama aparecem apenas em carreiras pertinentes. Quanto maior o número, maior a característica:</p>'+attributes+'</div>'+
+  '<div class="tutorial-section"><h3>3. Dinheiro e outros indicadores</h3><p><strong>Dinheiro:</strong> saldo disponível para gastos. <strong>Investimentos:</strong> valor reservado, separado do saldo. <strong>Patrimônio:</strong> inclui outros bens. <strong>Relações:</strong> mostram o vínculo com outras pessoas. <strong>Atividades:</strong> treinos e ações comuns podem ser repetidos no mesmo ano.</p></div>'+
   '<div class="tutorial-section"><h3>4. Onde ficam as funções?</h3><p><strong>Trabalho:</strong> estudo e emprego. <strong>Bens:</strong> veículos, imóveis, empresas, investimentos e manutenção anual. <strong>Escola:</strong> professores, colegas e atividades infantis. <strong>Relações:</strong> família e amizades. <strong>Atividades:</strong> ações do ano. No botão <strong>Mais</strong> da barra inferior ou no menu ☰ você encontra também Escola, Negócios, Política, Fama, Riscos, IA, Conquistas e Modo Criador. Use <strong>📖 Diário</strong> no cabeçalho para voltar à sua vida.</p></div>'+
   '<div class="tutorial-section"><h3>5. Como salvar meu progresso?</h3><p>O progresso é <strong>salvo automaticamente neste aparelho e, após login, também na nuvem</strong> quando não há conflito entre partidas. Para ter uma cópia segura, abra ☰ → <strong>Salvar e recuperar</strong> → <strong>Exportar arquivo JSON</strong>. Guarde o arquivo no iCloud Drive/Arquivos do iPhone. Para restaurar, use <strong>Importar jogo</strong> no aparelho desejado. A importação substitui a partida atual.</p><p class="tutorial-warning">⚠️ Sem login, o salvamento fica apenas no aparelho. Com login, o backup na nuvem permite recuperar sua partida no PC/iPhone; se houver duas versões divergentes, escolha qual manter. O arquivo JSON continua sendo um backup adicional seguro.</p><div class="mini-buttons"><button type="button" class="primary-button" data-act="game-settings">💾 Abrir salvamento →</button></div></div>'+
   '<div class="tutorial-section"><h3>6. Conquistas</h3><p>Abra ☰ → <strong>Conquistas</strong> para ver desafios de trabalho, estudos, família, dinheiro, negócios, política, fama, luta e muito mais. Quando você completa um objetivo, ele fica desbloqueado na sua partida.</p></div>'+
