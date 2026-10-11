@@ -229,7 +229,133 @@ function jobRequirement(c){
 }
 function startUniversity(d){if(safeExtra().prison>0)return showToast('Não pode cursar faculdade enquanto cumpre pena.');if(!safeExtra().school?.finished)return showToast('Conclua primeiro o ensino médio.');if(!game?.alive||game.age<18)return showToast('Você precisa ter 18 anos.');if(game.university)return showToast('Você já está estudando na faculdade.');if(game.degree.includes(d))return showToast('Você já concluiu esse curso.');if(!DEGREES[d])return;if(game.stats.inteligencia<50)return showToast('Você precisa de 50 pontos de inteligência para ingressar.');game.university={degree:d,yearsLeft:4};logLine('Faculdade','Você entrou em '+DEGREES[d]+'. A mensalidade anual é de R$ 6.500 no jogo.');save();render()}
 function romance(){if(safeExtra().prison>0)return showToast('Relacionamentos indisponíveis durante a prisão.');if(game.age<16)return showToast('Relacionamentos românticos disponíveis aos 16 anos.');if(game.partnerId)return showToast('Você já tem um relacionamento.');const p={id:Date.now(),name:choose(NAMES),role:'Namoro',emoji:'💞',bond:rand(52,70)};game.people.push(p);game.partnerId=p.id;logLine('Novo romance','Você conheceu '+p.name+' e os dois começaram a namorar.');save();render()}
-function relationAction(id,action){if(safeExtra().prison>0)return showToast('Visitas indisponíveis durante a prisão.');const p=game.people.find(x=>x.id===id);if(!p)return;if(action==='casar'){if(game.age<18||id!==game.partnerId||p.bond<65)return showToast('Para casar é preciso ter 18 anos e vínculo de 65 ou mais.');if(game.cash<3500)return showToast('Você precisa de R$ 3.500 para o casamento.');game.cash-=3500;p.role='Cônjuge';statChange({felicidade:13});logLine('Casamento','Você se casou com '+p.name+'!')}else if(action==='filho'){if(id!==game.partnerId||game.age<18)return;const childName=window.CaminhosDynasty?.birth(game);if(!childName)game.children++;game.cash-=1200;statChange({felicidade:9});logLine('A família cresceu','Nasceu '+(childName||'seu bebê')+'! Você agora tem '+game.children+' filho(s).');}else if(action==='terminar'){p.role='Ex-relacionamento';game.partnerId=null;statChange({felicidade:-12});logLine('Fim do relacionamento','Você e '+p.name+' decidiram seguir caminhos diferentes.')}else{p.bond=clamp(p.bond+rand(8,13));statChange({felicidade:3});logLine('Laços fortalecidos','Você passou bons momentos com '+p.name+'.')}save();render()}
+function relationshipFeedback(p,action,message,oldBond){
+ const change=clamp(p.bond)-oldBond;
+ const score=change>0?'+'+change:String(change);
+ const reaction=change>0?'Seu relacionamento melhorou.':change<0?'Seu relacionamento piorou.':'Seu relacionamento não mudou.';
+ const tone=change>0?'improved':change<0?'worsened':'unchanged';
+ const icon=change>0?'💚':change<0?'💔':'💬';
+ const mood=(p.irritation||0)>=45?'Irritado(a)':(p.irritation||0)>=18?'Incomodado(a)':'Tranquilo(a)';
+ showModal('<div class="relationship-result">'+
+ '<div class="relationship-result-icon">'+icon+'</div>'+
+ '<div class="card-kicker">RESULTADO DA INTERAÇÃO</div>'+
+ '<h2 id="modalTitle">'+escapeHTML(action)+'</h2>'+
+ '<p>'+escapeHTML(message)+'</p>'+
+ '<div class="relationship-result-score '+tone+'"><span>'+escapeHTML(reaction)+'</span>'+
+ '<strong>'+score+' de vínculo</strong></div>'+
+ '<div class="relationship-result-info"><span>Vínculo com '+escapeHTML(p.name)+': <b>'+Math.round(p.bond)+'/100</b></span>'+
+ '<span>Humor: '+mood+'</span></div>'+
+ '<button type="button" class="secondary-button relationship-result-close" data-act="dismiss-result">Entendi</button></div>');
+}
+function relationAction(id,action){
+ if(!game?.alive)return showToast('Escolha uma vida para continuar.');
+ if(game.pendingEvent)return showEvent();
+ if(safeExtra().prison>0)return showToast('Visitas indisponíveis durante a prisão.');
+ const p=game.people.find(x=>Number(x.id)===Number(id));if(!p)return;
+ const oldBond=clamp(p.bond);
+ let title='',message='';
+ const log=(entry,desc)=>{logLine(entry,desc);save();render();relationshipFeedback(p,title,message,oldBond)};
+ if(action==='casar'){
+  if(game.age<18||Number(id)!==Number(game.partnerId)||p.bond<65)return showToast('É preciso ter 18 anos e vínculo de 65 ou mais para casar.');
+  if(game.cash<3500)return showToast('Você precisa de R$ 3.500 para o casamento.');
+  game.cash-=3500;p.role='Cônjuge';statChange({felicidade:13});
+  title='Você se casou com '+p.name;
+  message='A cerimônia foi especial e vocês agora estão casados!';
+  log('Casamento',message);return;
+ }
+ if(action==='filho'){
+  if(Number(id)!==Number(game.partnerId)||game.age<18)return showToast('Esta opção não está disponível neste relacionamento.');
+  if(game.cash<1200)return showToast('Você precisa de R$ 1.200 para as despesas iniciais.');
+  const childName=window.CaminhosDynasty?.birth(game);if(!childName)game.children++;
+  game.cash-=1200;statChange({felicidade:9});
+  title='Sua família cresceu';
+  message='Nasceu '+(childName||'um bebê')+'! Agora você tem '+game.children+' filho(s).';
+  log('A família cresceu',message);return;
+ }
+ if(action==='terminar'){
+  if(Number(id)!==Number(game.partnerId))return;
+  p.role='Ex-relacionamento';game.partnerId=null;statChange({felicidade:-12});
+  p.bond=clamp(p.bond-rand(12,26));
+  title='Você terminou com '+p.name;
+  message='Vocês decidiram seguir caminhos diferentes. O vínculo ficou abalado.';
+  log('Fim do relacionamento',message);return;
+ }
+ const allowed=['aproximar','passar-tempo','elogiar','presente','desculpas','discutir','provocar','ignorar'];
+ if(!allowed.includes(action))return;
+ const data=(safeExtra().socialEncounters||={});
+ const key=String(p.id);
+ let record=data[key];
+ if(!record||record.year!==game.age){
+  const gap=record?Math.max(0,game.age-record.year):0;
+  p.irritation=clamp((p.irritation||0)-gap*22);
+  record={year:game.age,talks:0,total:0};
+  data[key]=record;
+ }
+ const times=record.total++;
+ let delta=0;
+ if(action==='aproximar'){
+  record.talks++;
+  if(record.talks===1){
+   delta=rand(5,10)-Math.floor((p.irritation||0)/28);
+   title='Você conversou com '+p.name;
+   message='Vocês tiveram uma conversa agradável e se conheceram melhor.';
+  }else if(record.talks===2){
+   delta=rand(1,5)-Math.floor((p.irritation||0)/20);
+   title='Você conversou novamente com '+p.name;
+   message=p.name+' ainda conversou com você, mas já tinha menos assunto.';
+  }else if(record.talks===3){
+   delta=-rand(1,4);
+   p.irritation=clamp((p.irritation||0)+20);
+   title=p.name+' começou a se incomodar';
+   message='Você tentou conversar novamente. '+p.name+' respondeu de forma breve e pediu um pouco de espaço.';
+  }else{
+   delta=-rand(6,13)-Math.min(8,(record.talks-4)*2);
+   p.irritation=clamp((p.irritation||0)+26);
+   title=p.name+' ficou irritado(a)';
+   message='Você insistiu em conversar várias vezes no mesmo ano. '+p.name+' perdeu a paciência e encerrou a conversa.';
+  }
+ }else if(action==='passar-tempo'){
+  delta=rand(4,9)-Math.floor(times/2);
+  title='Você passou tempo com '+p.name;
+  message='Vocês fizeram algo juntos e fortaleceram sua convivência.';
+ }else if(action==='elogiar'){
+  delta=rand(3,8)-Math.floor(times/2);
+  title='Você elogiou '+p.name;
+  message='Você fez um elogio sincero. '+p.name+' gostou de ouvir isso.';
+ }else if(action==='presente'){
+  const cost=180;
+  if(game.cash<cost){record.total--;return showToast('Você precisa de R$ 180 para comprar um presente.')}
+  game.cash-=cost;
+  delta=rand(5,12)-Math.floor(times/2);
+  title='Você presenteou '+p.name;
+  message='Você comprou um presente por '+brl(cost)+' para '+p.name+'.';
+ }else if(action==='desculpas'){
+  delta=(p.irritation||0)>35?rand(2,6):rand(6,11);
+  p.irritation=clamp((p.irritation||0)-25);
+  title='Você pediu desculpas a '+p.name;
+  message='Você reconheceu seu erro e pediu desculpas. '+p.name+' ouviu o que você tinha a dizer.';
+ }else if(action==='discutir'){
+  delta=-rand(9,19);p.irritation=clamp((p.irritation||0)+20);
+  title='Você discutiu com '+p.name;
+  message='A conversa virou uma discussão e vocês saíram magoados.';
+ }else if(action==='provocar'){
+  delta=-rand(6,14);p.irritation=clamp((p.irritation||0)+17);
+  title='Você provocou '+p.name;
+  message='Sua provocação foi mal recebida e '+p.name+' ficou incomodado(a).';
+ }else if(action==='ignorar'){
+  delta=-rand(4,10);p.irritation=clamp((p.irritation||0)+8);
+  title='Você ignorou '+p.name;
+  message='Você decidiu não dar atenção a '+p.name+', que se sentiu deixado(a) de lado.';
+ }
+ if(delta>0&&p.irritation>50&&action!=='desculpas'){
+  delta-=Math.ceil(p.irritation/15);
+  message+=' Porém, '+p.name+' ainda está irritado(a) e precisa de espaço.';
+ }
+ p.bond=clamp(p.bond+delta);
+ if(action==='aproximar'||action==='passar-tempo')statChange({felicidade:p.bond>oldBond?2:-2});
+ if(['discutir','provocar','ignorar'].includes(action))statChange({felicidade:-2});
+ log('Relacionamento: '+title,message+' Vínculo: '+oldBond+' → '+p.bond+'/100.');
+}
 function moneyAction(type,amount){if(safeExtra().prison>0)return showToast('Movimentações indisponíveis na prisão.');if(!game?.alive)return;const n=Number(amount)||0;if(n<=0)return;if(type==='depositar'){if(game.cash<n)return showToast('Saldo insuficiente para investir.');game.cash-=n;game.savings+=n;logLine('Investimento','Você aplicou '+brl(n)+' para o futuro.')}else if(type==='resgatar'){if(game.savings<n)return showToast('Investimento insuficiente.');game.savings-=n;game.cash+=n;logLine('Resgate','Você resgatou '+brl(n)+'.')}else if(type==='imovel'){if(game.cash<75000)return showToast('Você precisa de R$ 75.000.');game.cash-=75000;game.properties++;logLine('Casa própria','Você comprou um imóvel por R$ 75.000.')}save();render()}
 function displayTitle(title,subtitle){return `<h2 class="panel-title">${title}</h2><p class="panel-subtitle">${subtitle}</p>`}
 function renderActivities(){const childhood=game.age<6,young=game.age<16,actions=childhood?['brincar','familia','explorar','meditar']:young?['estudar','esporte','socializar','familia','explorar','hobby']:['estudar','esporte','socializar','trabalhar','meditar','hobby','voluntariado','terapia','viagem'];const filtered=actions.filter(id=>!(id==='trabalhar'&&!game.job));
@@ -363,7 +489,7 @@ $('newGameForm').addEventListener('submit',e=>{e.preventDefault();const f=new Fo
 $('nextYear').addEventListener('click',advance);$('openNavigation').addEventListener('click',openMoreMenu);$('homeShortcut').addEventListener('click',()=>{activeTab='vida';render();window.scrollTo({top:0,behavior:'smooth'})});$('openSettings').addEventListener('click',showSettings);$('closeModal').addEventListener('click',hideModal);$('brandHome').addEventListener('click',e=>{e.preventDefault();activeTab='vida';render();window.scrollTo({top:0,behavior:'smooth'})});
 document.addEventListener('submit',e=>{if(e.target.id!=='aiConfigForm')return;e.preventDefault();const endpoint=$('aiEndpoint').value.trim();if(endpoint&&(!/^https:\/\//i.test(endpoint)||endpoint.length>240))return showToast('Use uma URL HTTPS válida para seu Worker.');config.endpoint=endpoint;config.enableAI=$('aiEnabled').checked&&!!endpoint;persistConfig();render();showToast('Configuração da IA salva.')});
 document.addEventListener('change',e=>{if(e.target.id==='importSave')importSave(e.target.files?.[0])});
-document.addEventListener('click',e=>{const tab=e.target.closest('[data-tab]');if(tab){activeTab=tab.dataset.tab;render();return}const b=e.target.closest('[data-act]');if(!b)return;const act=b.dataset.act,id=b.dataset.id,option=b.dataset.option;if(act==='attribute-boost')openAttributeOpportunity(b.dataset.stat);if(act==='activity')performAction(id);if(act==='job')setJob(id);if(act==='quit-job'){if(confirm('Deseja realmente pedir demissão?')){window.CaminhosPaths?.leave(game);game.job=null;game.jobYears=0;logLine('Mudança de planos','Você decidiu sair do emprego.');render()}}if(act==='university')startUniversity(id);if(act==='romance')romance();if(act==='rel')relationAction(Number(id),option);if(act==='money'){let n=b.dataset.value==='all'?game.savings:Number(b.dataset.value);moneyAction(option,n)}if(act==='choice')applyChoice(Number(b.dataset.index));if(act==='show-event')showEvent();if(act==='tutorial')showTutorial();if(act==='game-settings')showSettings();if(act==='save-now')window.CaminhosCloud?.manualSave();if(act==='export')downloadSave();if(act==='restart')restartLife();if(act==='inherit'){if(!game?.alive&&window.CaminhosDynasty?.chooseHeir(game,Number(id))){save();hideModal();activeTab='vida';render();showToast('🌳 A história continua com '+game.name+'!')}}if(act==='account-achievements')showModal(window.CaminhosAchievements?.render(game)||'Conquistas indisponíveis.');if(act==='ai-now')generateNow()});
+document.addEventListener('click',e=>{const tab=e.target.closest('[data-tab]');if(tab){activeTab=tab.dataset.tab;render();return}const b=e.target.closest('[data-act]');if(!b)return;const act=b.dataset.act,id=b.dataset.id,option=b.dataset.option;if(act==='attribute-boost')openAttributeOpportunity(b.dataset.stat);if(act==='dismiss-result')hideModal();if(act==='activity')performAction(id);if(act==='job')setJob(id);if(act==='quit-job'){if(confirm('Deseja realmente pedir demissão?')){window.CaminhosPaths?.leave(game);game.job=null;game.jobYears=0;logLine('Mudança de planos','Você decidiu sair do emprego.');render()}}if(act==='university')startUniversity(id);if(act==='romance')romance();if(act==='rel')relationAction(Number(id),option);if(act==='money'){let n=b.dataset.value==='all'?game.savings:Number(b.dataset.value);moneyAction(option,n)}if(act==='choice')applyChoice(Number(b.dataset.index));if(act==='show-event')showEvent();if(act==='tutorial')showTutorial();if(act==='game-settings')showSettings();if(act==='save-now')window.CaminhosCloud?.manualSave();if(act==='export')downloadSave();if(act==='restart')restartLife();if(act==='inherit'){if(!game?.alive&&window.CaminhosDynasty?.chooseHeir(game,Number(id))){save();hideModal();activeTab='vida';render();showToast('🌳 A história continua com '+game.name+'!')}}if(act==='account-achievements')showModal(window.CaminhosAchievements?.render(game)||'Conquistas indisponíveis.');if(act==='ai-now')generateNow()});
 game=restore();if(game)window.CaminhosDynasty?.ensure(game);render();
 
 // Navegação auxiliar e ações dos módulos avançados.
