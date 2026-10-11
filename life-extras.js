@@ -107,7 +107,7 @@ function annual(g){
  const s=e.school;
  if(g.age>=4 && g.age<=17 && s.yearProcessed!==g.age){
    s.yearProcessed=g.age;
-   const evolution=rand(-7,6)+Math.round((g.stats.inteligencia-50)/16)+Math.round((g.stats.disciplina-50)/18);
+   const evolution=rand(-7,6)+Math.round((g.stats.inteligencia-50)/16)+Math.round((g.stats.inteligencia-50)/26);
    s.average=clamp(s.average+evolution);
    if(s.average>=85){s.awards++;noteAnnual('Destaque escolar','Você recebeu reconhecimento por seu desempenho na escola.')}
    if(g.age===4)noteAnnual('Primeiro dia na escola', 'Você começou a educação infantil e conheceu colegas e professores.');
