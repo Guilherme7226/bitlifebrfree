@@ -7,6 +7,7 @@ const ready=!!(conf.url&&conf.publishableKey&&/^https:\/\/[a-z0-9-]+\.supabase\.
 const META_PREFIX='caminhos.cloud.synced.';
 let client=null,session=null,connectedPromise=null,bootPromise=null;
 let sync=false,knownUpdated=null,busy=false,timer=null,remote=null,state='local',resetting=false,resetEpoch=0;
+let achievementTimer=null,achievementBusy=false;
 const line=e=>String(e?.message||e||'Falha desconhecida').slice(0,180);
 const html=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const feedback=m=>{if(typeof showToast==='function')showToast(m)};
@@ -45,10 +46,13 @@ async function connect(){
      const oldId=session?.user?.id;
      session=next;
      if(!next){
-       clearTimeout(timer);sync=false;knownUpdated=null;remote=null;bootPromise=null;
+       clearTimeout(timer);clearTimeout(achievementTimer);sync=false;knownUpdated=null;remote=null;bootPromise=null;
+     window.CaminhosAchievements?.switchAccount('guest');
        localIndicator();
        return;
      }
+     window.CaminhosAchievements?.switchAccount(next.user.id);
+     syncAchievements();
      if(oldId!==next.user.id || (event==='SIGNED_IN'&&!sync&& !bootPromise)){
        setTimeout(()=>{bootstrap().catch(e=>indicator('error','Nuvem indisponível: '+line(e)))},0);
      }
@@ -56,6 +60,7 @@ async function connect(){
    const result=await supa.auth.getSession();
    if(result.error)throw result.error;
    session=result.data.session;
+   if(session){window.CaminhosAchievements?.switchAccount(session.user.id);syncAchievements();}
    if(session)setTimeout(()=>{bootstrap().catch(e=>indicator('error','Nuvem indisponível: '+line(e)))},0);
    else localIndicator();
    return supa;
@@ -315,11 +320,32 @@ async function resetLife(){
    return false;
  }finally{resetting=false}
 }
+async function uploadAchievements(){
+ if(!canSync()||achievementBusy||resetting||!window.CaminhosAchievements)return;
+ const userId=session.user.id;
+ achievementBusy=true;
+ try{
+   const progress=window.CaminhosAchievements.getProgress();
+   const {data,error}=await client.rpc('merge_account_achievements',{new_progress:progress});
+   if(error)throw error;
+   if(session?.user?.id!==userId)return;
+   window.CaminhosAchievements.merge(data);
+   const latest=window.CaminhosAchievements.getProgress();
+   if(Object.keys(latest).some(key=>!data?.[key]))syncAchievements();
+ }catch(e){feedback('Não foi possível sincronizar as conquistas agora: '+line(e))}
+ finally{achievementBusy=false}
+}
+function syncAchievements(){
+ if(!canSync()||resetting||!window.CaminhosAchievements)return;
+ clearTimeout(achievementTimer);
+ achievementTimer=setTimeout(()=>uploadAchievements(),1100);
+}
 async function signout(){
  if(!client)return;
  const {error}=await client.auth.signOut();
  if(error)return feedback('Falha ao sair: '+line(error));
- session=null;sync=false;knownUpdated=null;remote=null;clearTimeout(timer);
+ session=null;sync=false;knownUpdated=null;remote=null;clearTimeout(timer);clearTimeout(achievementTimer);
+ window.CaminhosAchievements?.switchAccount('guest');
  localIndicator();open();
 }
 async function refresh(){
@@ -360,7 +386,7 @@ document.addEventListener('click',ev=>{
 });
 window.addEventListener('online',()=>{if(canSync()&&sync&&getLocal())queueSave(getLocal());});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&canSync()&&!sync&&state==='error')bootstrap().catch(()=>{});});
-window.CaminhosCloud={open,queueSave,configured:ready,manualSave,resetLife,getStatus:()=>state};
+window.CaminhosCloud={open,queueSave,configured:ready,manualSave,resetLife,syncAchievements,getStatus:()=>state};
 if(ready)connect().catch(e=>{indicator('error','Nuvem indisponível');feedback('Falha ao conectar: '+line(e))});
 else localIndicator();
 })();
