@@ -81,7 +81,7 @@ assert.ok(code('window.CaminhosAchievements.count(game)')>0,'achievements still 
 const html=fs.readFileSync('index.html','utf8');
 assert.match(html,/data-dock="more"/);
 assert.match(html,/id="homeShortcut"/);
-assert.match(html,/data-tab="escola"/);
+assert.doesNotMatch(html,/data-tab="escola"/,"School accessible from career rather than separate top-level tab");
 const css=fs.readFileSync('styles.css','utf8');
 assert.match(css,/grid-template-columns:\.9fr \.9fr 1\.1fr \.9fr \.9fr \.8fr/);
 
