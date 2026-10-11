@@ -23,7 +23,7 @@
     <header class="topbar">
       <button type="button" id="openNavigation" class="icon-button nav-toggle hidden" aria-label="Abrir todas as seções" title="Menu do jogo">☰</button>
       <a class="brand" href="#" aria-label="Caminhos: início" id="brandHome"><span class="brand-mark">✦</span><span>CAMINHOS<span class="brand-dot">.</span><small>SIMULADOR DE VIDA</small></span></a>
-      <div class="top-right"><span class="online"><span></span> Jogo local</span><button class="icon-button" id="openSettings" type="button" title="Configurações" aria-label="Configurações">⚙</button></div>
+      <div class="top-right"><span class="online" id="saveIndicator" role="status" aria-live="polite">Salvo no aparelho</span><button type="button" id="quickSave" class="quick-save hidden" data-cloud-action="save" aria-label="Salvar progresso agora">💾 Salvar</button><button class="icon-button" id="openSettings" type="button" title="Configurações" aria-label="Configurações">⚙</button></div>
     </header>
     <section id="welcomeView" class="welcome hidden">
       <div class="welcome-copy"><span class="eyebrow"><span class="sparkle">✳</span> SUA HISTÓRIA COMEÇA AQUI</span>
@@ -44,7 +44,7 @@
       <section class="profile-banner">
         <div class="profile-avatar" id="avatar">👶</div>
         <div class="profile-heading"><button type="button" class="profile-home" id="homeShortcut" aria-label="Voltar ao diário da vida">⌂ <span>Início</span></button><div class="eyebrow" id="lifeStage">A PRIMEIRA PÁGINA</div><h1 id="heroName">Alex</h1><div class="profile-sub"><span id="ageLabel">0 anos</span><span class="dot-separator">·</span><span id="jobLabel">Descobrindo o mundo</span><span class="profile-actions" id="profileActions">3 ações</span></div></div>
-        <div class="profile-money"><small>PATRIMÔNIO DISPONÍVEL</small><strong id="moneyLabel">R$ 0</strong><span id="savingsLabel">Investimentos: R$ 0</span></div>
+        <div class="profile-money"><small>PATRIMÔNIO DISPONÍVEL</small><strong id="moneyLabel">R$ 0</strong><span id="savingsLabel">Investimentos: R$ 0</span><span id="saveStatus" class="save-status" data-save-state="local">Salvo no aparelho</span></div>
       </section>
       <section class="stats-strip" id="statsStrip" aria-label="Atributos do personagem"></section>
       <div class="body-grid">
