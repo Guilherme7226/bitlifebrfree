@@ -46,7 +46,7 @@
     ['luta','Esportes','🥊','Primeira vitória','Vença sua primeira luta.',g=>(g.extra?.fightWins||0)>=1],
     ['campeao','Esportes','🥇','Campeão','Conquiste um título na luta.',g=>!!g.extra?.champion],
     ['redencao','Riscos','🔓','Segunda chance','Saia da prisão após cumprir pena.',g=>g.history.some(h=>h.title==='Liberdade')],
-    ['deus','Especial','✨','Arquiteto do destino','Use o Modo Criador.',g=>(g.extra?.godEdits||0)>=1]
+    ['deus','Especial','✨','Arquiteto do destino','Use o Modo Criador.',g=>(g.extra?.godEdits||0)>=1],
     ['escola','Escola','🏫','Primeira aula','Comece a frequentar a escola.',g=>g.age>=4&&!!g.extra?.school],
     ['boas-notas','Escola','📗','Aluno exemplar','Tenha média escolar de 90 pontos.',g=>(g.extra?.school?.average||0)>=90],
     ['trabalho-escola','Escola','🔬','Feira de ciências','Participe de três projetos escolares.',g=>(g.extra?.school?.projects||0)>=3],
