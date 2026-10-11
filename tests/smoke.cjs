@@ -172,7 +172,7 @@ const iosCss=fs.readFileSync('theme-classic.css','utf8');
 assert.match(iosCss,/height:calc\(64px \+ env\(safe-area-inset-top, 0px\)\)/,'cabeçalho respeita barra de status');
 assert.match(iosCss,/padding-top:env\(safe-area-inset-top, 0px\)/,'reserva vertical segura do iPhone');
 assert.match(iosCss,/top:calc\(159px \+ env\(safe-area-inset-top, 0px\)\)/,'título fixo não invade o cabeçalho');
-assert.match(fs.readFileSync('index.html','utf8'),/theme-classic\.css\?v=20261011-stats-fixed/,'cache do iPhone atualizado');
+assert.match(fs.readFileSync('index.html','utf8'),/theme-classic\.css\?v=20261011-bottom-five/,'cache do iPhone atualizado');
 assert.doesNotMatch(fs.readFileSync('index.html','utf8'),/data-tab="escola"|data-tab="hobbies"/,'school and martial arts accessed in relevant parent sections');
 const statusCss=fs.readFileSync('theme-classic.css','utf8');
 assert.match(statusCss,/\.game>\.stats-strip\{\s*order:1;/,'status aparecem antes do diario no iPhone');
@@ -278,5 +278,21 @@ assert.match(cssFixed,/position:sticky;[\s\S]*top:calc\(159px \+ env\(safe-area-
 assert.match(cssFixed,/--stats-sticky-size:79px/,'sticky reserved space for core stats');
 assert.match(fs.readFileSync('index.html','utf8'),/game\.js\?v=20261011-choices-popularidade/,
  'new game logic cache busted');
+
+
+const pageHTML=fs.readFileSync('index.html','utf8');
+const dockMarkup=pageHTML.match(/<nav class="mobile-dock"[^>]*>([\s\S]*?)<\/nav>/)?.[1]||'';
+assert.deepEqual([...dockMarkup.matchAll(/data-dock="([^"]+)"/g)].map(m=>m[1]),[
+ 'carreira','financas','advance','relacoes','atividades'
+],'mobile dock has exactly the five requested controls');
+assert.doesNotMatch(dockMarkup,/data-dock="more"|>Mais</,'More is not in mobile dock');
+assert.match(pageHTML,/id="openNavigation"[^>]*aria-label="Abrir Mais"/,
+ 'More remains available in top header');
+assert.match(fs.readFileSync('game.js','utf8'),
+ /\$\('openNavigation'\)\.addEventListener\('click',openMoreMenu\)/,
+ 'top menu opens the full navigation');
+assert.match(fs.readFileSync('theme-classic.css','utf8'),
+ /grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\) minmax\(0,1\.25fr\) minmax\(0,1fr\) minmax\(0,1fr\)/,
+ 'five controls are distributed with the Age button centered');
 
 console.log('OK: escola, amigos, professores, bens, empresas, venda, salvamento e navegação.');
