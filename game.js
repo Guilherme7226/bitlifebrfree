@@ -244,7 +244,7 @@ $('newGameForm').addEventListener('submit',e=>{e.preventDefault();const f=new Fo
 $('nextYear').addEventListener('click',advance);$('openNavigation').addEventListener('click',openMoreMenu);$('homeShortcut').addEventListener('click',()=>{activeTab='vida';render();window.scrollTo({top:0,behavior:'smooth'})});$('openSettings').addEventListener('click',showSettings);$('closeModal').addEventListener('click',hideModal);$('brandHome').addEventListener('click',e=>{e.preventDefault();activeTab='vida';render();window.scrollTo({top:0,behavior:'smooth'})});
 document.addEventListener('submit',e=>{if(e.target.id!=='aiConfigForm')return;e.preventDefault();const endpoint=$('aiEndpoint').value.trim();if(endpoint&&(!/^https:\/\//i.test(endpoint)||endpoint.length>240))return showToast('Use uma URL HTTPS válida para seu Worker.');config.endpoint=endpoint;config.enableAI=$('aiEnabled').checked&&!!endpoint;persistConfig();render();showToast('Configuração da IA salva.')});
 document.addEventListener('change',e=>{if(e.target.id==='importSave')importSave(e.target.files?.[0])});
-document.addEventListener('click',e=>{const tab=e.target.closest('[data-tab]');if(tab){activeTab=tab.dataset.tab;render();return}const b=e.target.closest('[data-act]');if(!b)return;const act=b.dataset.act,id=b.dataset.id,option=b.dataset.option;if(act==='activity')performAction(id);if(act==='job')setJob(id);if(act==='quit-job'){if(confirm('Deseja realmente pedir demissão?')){window.CaminhosPaths?.leave(game);game.job=null;game.jobYears=0;logLine('Mudança de planos','Você decidiu sair do emprego.');render()}}if(act==='university')startUniversity(id);if(act==='romance')romance();if(act==='rel')relationAction(Number(id),option);if(act==='money'){let n=b.dataset.value==='all'?game.savings:Number(b.dataset.value);moneyAction(option,n)}if(act==='choice')applyChoice(Number(b.dataset.index));if(act==='show-event')showEvent();if(act==='tutorial')showTutorial();if(act==='game-settings')showSettings();if(act==='save-now')window.CaminhosCloud?.manualSave();if(act==='export')downloadSave();if(act==='restart'){if(confirm('Recomeçar sua vida? O jogo atual será apagado deste navegador. Exporte antes caso queira guardar.')){game=null;try{localStorage.removeItem(SAVE_KEY)}catch{}hideModal();render()}}if(act==='ai-now')generateNow()});
+document.addEventListener('click',e=>{const tab=e.target.closest('[data-tab]');if(tab){activeTab=tab.dataset.tab;render();return}const b=e.target.closest('[data-act]');if(!b)return;const act=b.dataset.act,id=b.dataset.id,option=b.dataset.option;if(act==='activity')performAction(id);if(act==='job')setJob(id);if(act==='quit-job'){if(confirm('Deseja realmente pedir demissão?')){window.CaminhosPaths?.leave(game);game.job=null;game.jobYears=0;logLine('Mudança de planos','Você decidiu sair do emprego.');render()}}if(act==='university')startUniversity(id);if(act==='romance')romance();if(act==='rel')relationAction(Number(id),option);if(act==='money'){let n=b.dataset.value==='all'?game.savings:Number(b.dataset.value);moneyAction(option,n)}if(act==='choice')applyChoice(Number(b.dataset.index));if(act==='show-event')showEvent();if(act==='tutorial')showTutorial();if(act==='game-settings')showSettings();if(act==='save-now')window.CaminhosCloud?.manualSave();if(act==='export')downloadSave();if(act==='restart')restartLife();if(act==='ai-now')generateNow()});
 game=restore();render();
 
 // Navegação auxiliar e ações dos módulos avançados.
@@ -276,5 +276,29 @@ function showTutorial(){
   '<div class="tutorial-section"><h3>7. Posso entrar com Google ou Apple?</h3><p>Abra ☰ → <strong>Conta e nuvem</strong>. O login Google pode sincronizar automaticamente após a autenticação. O login Apple depende da configuração do provedor. Use sempre o botão 💾 Salvar do cabeçalho para ver o estado do backup.</p></div>'
  );
 }
-function openMoreMenu(){if(!game)return;showModal(`<div class="card-kicker">NAVEGAÇÃO E AJUDA</div><h2 id="modalTitle">Explorar a vida</h2><div class="more-grid"><button type="button" class="secondary-button menu-help" data-act="tutorial">📘 Tutorial e atributos</button><button type="button" class="secondary-button menu-help" data-act="game-settings">💾 Salvar e recuperar</button><button type="button" class="secondary-button menu-help" data-cloud-action="open">☁️ Conta e nuvem</button>${Array.from(document.querySelectorAll('.nav-list .tab')).map(el=>`<button class="secondary-button" data-go="${escapeHTML(el.dataset.tab)}">${escapeHTML(el.textContent.trim())}</button>`).join('')}</div>`)}
+async function restartLife(){
+ if(!game)return;
+ const info='Recomeçar vida? Seu personagem atual, histórico, conquistas e bens serão apagados. Se estiver conectado ao Google, o backup desta vida na nuvem também será excluído. Para guardar uma cópia, exporte a partida antes. Deseja continuar?';
+ if(!confirm(info))return;
+ const cloud=window.CaminhosCloud;
+ if(cloud?.resetLife){
+   try{
+     const ok=await cloud.resetLife();
+     if(!ok)return;
+   }catch(err){
+     showToast('Não foi possível recomeçar. O progresso foi preservado.');
+     return;
+   }
+ }
+ game=null;
+ loading=false;
+ activeTab='vida';
+ try{localStorage.removeItem(SAVE_KEY)}catch{
+   showToast('Não foi possível apagar a partida local. Verifique o armazenamento do navegador.');
+   return;
+ }
+ hideModal();render();window.scrollTo({top:0,behavior:'smooth'});
+ showToast('Nova vida liberada! Crie um novo personagem.');
+}
+function openMoreMenu(){if(!game)return;showModal(`<div class="card-kicker">NAVEGAÇÃO E AJUDA</div><h2 id="modalTitle">Explorar a vida</h2><div class="more-grid"><button type="button" class="secondary-button menu-help" data-act="tutorial">📘 Tutorial e atributos</button><button type="button" class="secondary-button menu-help" data-act="game-settings">💾 Salvar e recuperar</button><button type="button" class="secondary-button menu-help" data-cloud-action="open">☁️ Conta e nuvem</button><button type="button" class="danger-button menu-help" data-act="restart">🔄 Recomeçar vida</button>${Array.from(document.querySelectorAll('.nav-list .tab')).map(el=>`<button class="secondary-button" data-go="${escapeHTML(el.dataset.tab)}">${escapeHTML(el.textContent.trim())}</button>`).join('')}</div>`)}
 document.addEventListener('click',ev=>{const btn=ev.target.closest('[data-go]');if(!btn)return;hideModal();activeTab=btn.dataset.go;render();window.scrollTo({top:0,behavior:'smooth'})});
