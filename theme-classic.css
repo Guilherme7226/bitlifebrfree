@@ -249,3 +249,25 @@ body{background:#e7edf3;color:#173e65;font-size:15px}
 @media(max-width:360px){
  .mobile-dock button span.dock-caption{font-size:9px}
 }
+
+/* iOS standalone / tela cheia: area da Dynamic Island, relogio, sinal e bateria.
+   black-translucent usa viewport-fit=cover: a parte segura precisa ser reservada.
+   Respeitar env() evita invadir a barra de status; nos navegadores comuns vale 0. */
+@media(max-width:700px){
+ .topbar{
+  height:calc(64px + env(safe-area-inset-top, 0px));
+  padding-top:env(safe-area-inset-top, 0px);
+  padding-bottom:0;
+  box-sizing:border-box;
+  align-items:center;
+ }
+ .profile-banner{
+  top:calc(64px + env(safe-area-inset-top, 0px));
+ }
+ .retro-screen-bar{
+  top:calc(159px + env(safe-area-inset-top, 0px));
+ }
+ html{
+  scroll-padding-top:calc(226px + env(safe-area-inset-top, 0px));
+ }
+}
