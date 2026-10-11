@@ -82,7 +82,7 @@ function harm(g,type,{safety=false}={}){
   if(type==='neglect')e.illness='Sintomas agravados';
   logLine('Susto e consequências','Sua decisão teve consequências: você perdeu '+damage+' pontos de saúde, mas se recuperou do perigo.');
  }
- return false;
+ return !g.alive;
 }
 function annual(g){
  const x=ensure(g);window.CaminhosSkills?.ensure(g);
