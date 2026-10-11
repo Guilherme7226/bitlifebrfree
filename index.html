@@ -13,11 +13,13 @@
   <meta name="description" content="Caminhos: seu simulador de vida com escolhas, carreira, família e histórias inesperadas.">
   <title>Caminhos — Simulador de Vida</title>
   <link rel="stylesheet" href="styles.css?v=20261011-vida">
+  <link rel="stylesheet" href="theme-classic.css?v=20261011-classic1">
   <script src="achievements.js" defer></script>
   <script src="life-extras.js?v=20261011-vida" defer></script>
   <script src="career-paths.js?v=20261011-vida" defer></script>
   <script src="sim-world.js?v=20261011-vida" defer></script>
-  <script src="game.js?v=20261011-vida" defer></script>
+  <script src="ui-familiar.js?v=20261011-classic1" defer></script>
+  <script src="game.js?v=20261011-classic1" defer></script>
   <script src="cloud-config.js" defer></script>
   <script src="cloud.js?v=20261011-autosave" defer></script>
 </head>
@@ -76,12 +78,12 @@
         </aside>
       </div>
       <nav class="mobile-dock" aria-label="Acesso rápido no iPhone">
-        <button type="button" data-dock="carreira" aria-label="Abrir trabalho e educação"><span aria-hidden="true">💼</span>Trabalho</button>
-        <button type="button" data-dock="financas" aria-label="Abrir bens e finanças"><span aria-hidden="true">🏠</span>Bens</button>
-        <button type="button" data-dock="advance" class="dock-plus" aria-label="Envelhecer um ano"><span aria-hidden="true">+</span>Idade</button>
-        <button type="button" data-dock="relacoes" aria-label="Abrir relações"><span aria-hidden="true">💞</span>Relações</button>
-        <button type="button" data-dock="atividades" aria-label="Abrir atividades"><span aria-hidden="true">🧭</span>Atividades</button>
-        <button type="button" data-dock="more" aria-label="Abrir outras áreas do jogo"><span aria-hidden="true">⋯</span>Mais</button>
+        <button type="button" data-dock="carreira" aria-label="Abrir escola, faculdade e trabalho"><span aria-hidden="true" id="careerDockIcon">🎓</span><span class="dock-caption" id="careerDockLabel">Escola</span></button>
+        <button type="button" data-dock="financas" aria-label="Abrir bens e finanças"><span aria-hidden="true">💰</span><span class="dock-caption">Bens</span></button>
+        <button type="button" data-dock="advance" class="dock-plus" aria-label="Envelhecer um ano"><span aria-hidden="true">+</span><span class="dock-caption">Idade</span></button>
+        <button type="button" data-dock="relacoes" aria-label="Abrir relações"><span aria-hidden="true">🤍</span><span class="dock-caption">Relações</span></button>
+        <button type="button" data-dock="atividades" aria-label="Abrir atividades"><span aria-hidden="true">•••</span><span class="dock-caption">Atividades</span></button>
+        <button type="button" data-dock="more" aria-label="Abrir outras áreas do jogo"><span aria-hidden="true">☰</span><span class="dock-caption">Mais</span></button>
       </nav>
     </main>
     <footer class="app-footer">CAMINHOS • Um jogo original sobre escolhas <span>Feito para jogar, experimentar e recomeçar.</span></footer>
