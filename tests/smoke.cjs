@@ -237,4 +237,13 @@ assert.match(code('game.lastEvent'),/saúde|Saúde/,'journal records health zero
 code("restartLife()");
 assert.equal(code('game'),null,'reset volta para criacao de personagem');
 assert.equal(storage.getItem('caminhos.save.v1'),null,'reset apaga save local');
+// Sorte continua na mecanica, mas nao aparece como atributo visual.
+code("startGame('Sorte Oculta','Santos, SP','curioso')");
+assert.ok(Number.isFinite(code("game.extra.luck")),'sorte interna e gerada normalmente');
+assert.doesNotMatch(code("window.CaminhosUI.renderStats(game)"),/Sorte|🍀/,'sorte nao aparece nas barras de status');
+assert.doesNotMatch(code("window.CaminhosSkills.render(game)"),/Sorte:|🍀/,'habilidades nao mostram valor da sorte');
+assert.doesNotMatch(code("window.CaminhosEveryday.renderMenu(game)"),/Sorte:\\s*\\d+|🍀/,'atividades nao mostram percentual da sorte');
+assert.match(fs.readFileSync('skills.js','utf8'),/const luck=g\.extra\.luck/,'talento ainda usa sorte nos calculos');
+assert.match(fs.readFileSync('everyday.js','utf8'),/const prob=\(g\.extra\.luck/,'loteria ainda usa sorte interna');
+assert.match(fs.readFileSync('index.html','utf8'),/ui-familiar\.js\?v=20261011-sorte-interna/,'iPhone recebe o layout atualizado');
 console.log('OK: escola, amigos, professores, bens, empresas, venda, salvamento e navegação.');
