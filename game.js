@@ -229,13 +229,15 @@ function jobRequirement(c){
 }
 function startUniversity(d){if(safeExtra().prison>0)return showToast('Não pode cursar faculdade enquanto cumpre pena.');if(!safeExtra().school?.finished)return showToast('Conclua primeiro o ensino médio.');if(!game?.alive||game.age<18)return showToast('Você precisa ter 18 anos.');if(game.university)return showToast('Você já está estudando na faculdade.');if(game.degree.includes(d))return showToast('Você já concluiu esse curso.');if(!DEGREES[d])return;if(game.stats.inteligencia<50)return showToast('Você precisa de 50 pontos de inteligência para ingressar.');game.university={degree:d,yearsLeft:4};logLine('Faculdade','Você entrou em '+DEGREES[d]+'. A mensalidade anual é de R$ 6.500 no jogo.');save();render()}
 function romance(){if(safeExtra().prison>0)return showToast('Relacionamentos indisponíveis durante a prisão.');if(game.age<16)return showToast('Relacionamentos românticos disponíveis aos 16 anos.');if(game.partnerId)return showToast('Você já tem um relacionamento.');const p={id:Date.now(),name:choose(NAMES),role:'Namoro',emoji:'💞',bond:rand(52,70)};game.people.push(p);game.partnerId=p.id;logLine('Novo romance','Você conheceu '+p.name+' e os dois começaram a namorar.');save();render()}
-function relationshipFeedback(p,action,message,oldBond){
+function relationshipFeedback(p,action,message,oldBond,oldCash){
  const change=clamp(p.bond)-oldBond;
  const score=change>0?'+'+change:String(change);
  const reaction=change>0?'Seu relacionamento melhorou.':change<0?'Seu relacionamento piorou.':'Seu relacionamento não mudou.';
  const tone=change>0?'improved':change<0?'worsened':'unchanged';
  const icon=change>0?'💚':change<0?'💔':'💬';
  const mood=(p.irritation||0)>=45?'Irritado(a)':(p.irritation||0)>=18?'Incomodado(a)':'Tranquilo(a)';
+ const difference=game.cash-oldCash;
+ const cashRow=difference!==0?'<span>Saldo: '+(difference>0?'+':'')+brl(difference)+'</span>':'';
  showModal('<div class="relationship-result">'+
  '<div class="relationship-result-icon">'+icon+'</div>'+
  '<div class="card-kicker">RESULTADO DA INTERAÇÃO</div>'+
@@ -244,7 +246,7 @@ function relationshipFeedback(p,action,message,oldBond){
  '<div class="relationship-result-score '+tone+'"><span>'+escapeHTML(reaction)+'</span>'+
  '<strong>'+score+' de vínculo</strong></div>'+
  '<div class="relationship-result-info"><span>Vínculo com '+escapeHTML(p.name)+': <b>'+Math.round(p.bond)+'/100</b></span>'+
- '<span>Humor: '+mood+'</span></div>'+
+ '<span>Humor: '+mood+'</span>'+cashRow+'</div>'+
  '<button type="button" class="secondary-button relationship-result-close" data-act="dismiss-result">Entendi</button></div>');
 }
 function relationAction(id,action){
@@ -252,9 +254,9 @@ function relationAction(id,action){
  if(game.pendingEvent)return showEvent();
  if(safeExtra().prison>0)return showToast('Visitas indisponíveis durante a prisão.');
  const p=game.people.find(x=>Number(x.id)===Number(id));if(!p)return;
- const oldBond=clamp(p.bond);
+ const oldBond=clamp(p.bond),oldCash=game.cash;
  let title='',message='';
- const log=(entry,desc)=>{logLine(entry,desc);save();render();relationshipFeedback(p,title,message,oldBond)};
+ const log=(entry,desc)=>{logLine(entry,desc);save();render();relationshipFeedback(p,title,message,oldBond,oldCash)};
  if(action==='casar'){
   if(game.age<18||Number(id)!==Number(game.partnerId)||p.bond<65)return showToast('É preciso ter 18 anos e vínculo de 65 ou mais para casar.');
   if(game.cash<3500)return showToast('Você precisa de R$ 3.500 para o casamento.');
@@ -280,7 +282,7 @@ function relationAction(id,action){
   message='Vocês decidiram seguir caminhos diferentes. O vínculo ficou abalado.';
   log('Fim do relacionamento',message);return;
  }
- const allowed=['aproximar','passar-tempo','elogiar','presente','desculpas','discutir','provocar','ignorar'];
+ const allowed=['aproximar','passar-tempo','elogiar','presente','desculpas','discutir','provocar','ignorar','pedir-dinheiro','cinema','acordo','insultar','espiar','recrutar'];
  if(!allowed.includes(action))return;
  const data=(safeExtra().socialEncounters||={});
  const key=String(p.id);
@@ -313,6 +315,96 @@ function relationAction(id,action){
    p.irritation=clamp((p.irritation||0)+26);
    title=p.name+' ficou irritado(a)';
    message='Você insistiu em conversar várias vezes no mesmo ano. '+p.name+' perdeu a paciência e encerrou a conversa.';
+  }
+ }else if(action==='pedir-dinheiro'){
+  const family=['Mãe','Pai','Padrasto','Madrasta','Avó','Avô','Irmão','Irmã','Filho','Filha','Cônjuge'];
+  if(!family.includes(p.role)){record.total--;return showToast('Peça dinheiro somente a familiares próximos.');}
+  record.moneyRequests=(record.moneyRequests||0)+1;
+  if(record.moneyRequests>1){
+   delta=-rand(7,14);p.irritation=clamp((p.irritation||0)+19);
+   title=p.name+' ficou incomodado(a) com o pedido';
+   message='Você pediu dinheiro novamente no mesmo ano e '+p.name+' pediu que parasse de insistir.';
+  }else{
+   const chance=Math.max(.12,Math.min(.90,.27+p.bond/175-(p.irritation||0)/180));
+   const value=game.age<18?rand(10,75):rand(40,350);
+   if(Math.random()<chance){
+    game.cash+=value;delta=rand(1,4);
+    title=p.name+' deu dinheiro a você';
+    message='Você pediu ajuda financeira e '+p.name+' ofereceu '+brl(value)+'.';
+   }else{
+    delta=-rand(2,7);p.irritation=clamp((p.irritation||0)+6);
+    title=p.name+' recusou seu pedido';
+    message='Você pediu dinheiro, mas '+p.name+' explicou que não poderia ajudar neste momento.';
+   }
+  }
+ }else if(action==='cinema'){
+  if(game.age<6){record.total--;return showToast('Ir ao cinema está disponível a partir de 6 anos.');}
+  const cost=game.age<16&&['Mãe','Pai','Padrasto','Madrasta'].includes(p.role)?0:90;
+  if(game.cash<cost){record.total--;return showToast('Você precisa de '+brl(cost)+' para ir ao cinema com '+p.name+'.');}
+  game.cash-=cost;
+  if(p.bond<15&&Math.random()<.8){
+   delta=-rand(1,4);
+   title=p.name+' recusou ir ao cinema';
+   message='Você convidou '+p.name+', mas ele(a) preferiu não sair com você.';
+  }else if((record.cinema||0)>=2){
+   delta=-rand(2,6);p.irritation=clamp((p.irritation||0)+9);
+   title=p.name+' se cansou de sair';
+   message='Vocês já foram ao cinema várias vezes este ano, e '+p.name+' queria fazer outra coisa.';
+  }else{
+   delta=rand(4,10)-Math.floor((p.irritation||0)/26);
+   statChange({felicidade:rand(3,7)});
+   title='Você foi ao cinema com '+p.name;
+   message='Vocês assistiram a um filme e passaram bons momentos juntos.';
+  }
+  record.cinema=(record.cinema||0)+1;
+ }else if(action==='acordo'){
+  if(game.age<12){record.total--;return showToast('Negociar objetos está disponível a partir de 12 anos.');}
+  const extra=safeExtra();
+  // Posses pessoais limitadas: cada item vendido desaparece do inventário.
+  // Assim, negociar não gera dinheiro ilimitado por cliques.
+  if(!Array.isArray(extra.socialBelongings))
+   extra.socialBelongings=[{name:'livro usado',value:35},{name:'colecionável antigo',value:65},{name:'jogo de tabuleiro',value:90}];
+  const item=extra.socialBelongings[0];
+  if(!item){record.total--;return showToast('Você não tem mais objetos pessoais para vender.');}
+  const price=Math.max(1,Number(item.value)||20);
+  const chance=Math.max(.1,Math.min(.95,.22+p.bond/150-(p.irritation||0)/190));
+  if(Math.random()<chance){
+   extra.socialBelongings.shift();game.cash+=price;delta=rand(2,6);
+   title='Você fechou um acordo com '+p.name;
+   message='Você vendeu '+item.name+' para '+p.name+' por '+brl(price)+'. O objeto saiu dos seus pertences.';
+  }else{
+   delta=-rand(1,4);
+   title=p.name+' não aceitou o acordo';
+   message='Você tentou vender '+item.name+', mas '+p.name+' não se interessou.';
+  }
+ }else if(action==='insultar'){
+  delta=-rand(12,23);p.irritation=clamp((p.irritation||0)+28);
+  statChange({felicidade:-3});
+  title='Você insultou '+p.name;
+  message='Você disse algo ofensivo a '+p.name+', que ficou muito magoado(a).';
+ }else if(action==='espiar'){
+  const chance=Math.min(.85,.46+(p.irritation||0)/260);
+  if(Math.random()<chance){
+   delta=-rand(14,27);p.irritation=clamp((p.irritation||0)+22);
+   title=p.name+' descobriu que estava sendo espionado(a)';
+   message='Você tentou espionar '+p.name+', mas foi descoberto(a). '+p.name+' considerou isso uma quebra de confiança.';
+  }else{
+   delta=0;
+   title='Você espiou '+p.name;
+   message='Você observou '+p.name+' sem ser notado(a). A relação não mudou, mas sua decisão poderia ter consequências.';
+  }
+ }else if(action==='recrutar'){
+  if(!safeExtra().cult){record.total--;return showToast('Você precisa liderar um culto no jogo para recrutar pessoas.');}
+  if(game.age<18){record.total--;return showToast('Recrutamento disponível apenas para adultos.');}
+  const chance=Math.max(.05,Math.min(.85,p.bond/125-(p.irritation||0)/200));
+  if(Math.random()<chance){
+   safeExtra().cult.members=(safeExtra().cult.members||0)+1;delta=rand(2,6);
+   title=p.name+' entrou para o seu grupo';
+   message='Você convidou '+p.name+' para seu culto e a pessoa aceitou.';
+  }else{
+   delta=-rand(5,12);p.irritation=clamp((p.irritation||0)+10);
+   title=p.name+' recusou o convite';
+   message=p.name+' ficou desconfortável com o convite para o seu culto.';
   }
  }else if(action==='passar-tempo'){
   delta=rand(4,9)-Math.floor(times/2);
