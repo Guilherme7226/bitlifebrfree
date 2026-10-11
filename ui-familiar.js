@@ -100,7 +100,7 @@ function renderRelationships(g){
  return out;
 }
 function renderDiary(g){
- const recent=(g.history||[]).slice(0,37).reverse();
+ const recent=(g.history||[]).slice(0,37); // save history is newest-first (unshift)
  let age=null,html='';
  for(const e of recent){
   if(age!==e.age){age=e.age;html+='<div class="retro-diary-age">Idade: '+age+' '+(age===1?'ano':'anos')+'</div>'}
