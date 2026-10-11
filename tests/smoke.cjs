@@ -154,7 +154,7 @@ assert.match(fs.readFileSync('index.html','utf8'),/sim-world.js/);
 assert.match(code("window.CaminhosUI.renderTab(game,'atividades')"),/Artes marciais/i,'artes marciais in activities');
 assert.match(code("window.CaminhosUI.renderTab(game,'financas')"),/Investimentos/,'menu de bens classico');
 assert.match(code("window.CaminhosUI.renderTab(game,'carreira')"),/PROFISSÃO|Profissão/,'menu da carreira classico');
-assert.match(code("window.CaminhosUI.renderTab(game,'relacoes')"),/Família|Amigos e afetos/,'menu de relacoes com nome');
+assert.match(code("window.CaminhosUI.renderTab(game,'relacoes')"),/Família|Amigos/,'menu de relacoes com nome');
 assert.match(code("window.CaminhosUI.renderTab(game,'relacoes')"),/Adotar ou cuidar dos pets/,'pets belong to relationships');
 assert.doesNotMatch(code("window.CaminhosUI.renderTab(game,'atividades')"),/Animais de estimação|Adotar ou cuidar dos pets/,'pets absent from activities');
 assert.doesNotMatch(code("window.CaminhosUI.renderTab(game,'atividades')"),/Escola e aprendizado/,'school absent from activities');
@@ -245,7 +245,7 @@ assert.doesNotMatch(code("window.CaminhosSkills.render(game)"),/Sorte:|🍀/,'ha
 assert.doesNotMatch(code("window.CaminhosEveryday.renderMenu(game)"),/Sorte:\\s*\\d+|🍀/,'atividades nao mostram percentual da sorte');
 assert.match(fs.readFileSync('skills.js','utf8'),/const luck=g\.extra\.luck/,'talento ainda usa sorte nos calculos');
 assert.match(fs.readFileSync('everyday.js','utf8'),/const prob=\(g\.extra\.luck/,'loteria ainda usa sorte interna');
-assert.match(fs.readFileSync('index.html','utf8'),/ui-familiar\.js\?v=20261011-combate/,'iPhone recebe o layout atualizado');
+assert.match(fs.readFileSync('index.html','utf8'),/ui-familiar\.js\?v=20261011-friendship/,'iPhone recebe o layout atualizado');
 // User interface must preserve four general attributes and show only applicable career stats.
 const four=code("window.CaminhosUI.renderStats(game)");
 assert.equal((four.match(/class="retro-stat-row retro-stat-action"/g)||[]).length,4,
@@ -276,7 +276,7 @@ const cssFixed=fs.readFileSync('theme-classic.css','utf8');
 assert.match(cssFixed,/position:sticky;[\s\S]*top:calc\(159px \+ env\(safe-area-inset-top, 0px\)\)/,
  'stats remain visible under iPhone notch during scroll');
 assert.match(cssFixed,/--stats-sticky-size:79px/,'sticky reserved space for core stats');
-assert.match(fs.readFileSync('index.html','utf8'),/game\.js\?v=20261011-combate/,
+assert.match(fs.readFileSync('index.html','utf8'),/game\.js\?v=20261011-friendship/,
  'new game logic cache busted');
 
 
@@ -366,7 +366,7 @@ assert.match(uiExtended,/'acordo'/,'item sale is a social action');
 assert.match(uiExtended,/'insultar'/,'insult is available');
 assert.match(uiExtended,/'espiar'/,'spying is available');
 assert.match(uiExtended,/social-option-body/,'social profiles show descriptions like the reference');
-assert.match(fs.readFileSync('index.html','utf8'),/game\.js\?v=20261011-combate/,
+assert.match(fs.readFileSync('index.html','utf8'),/game\.js\?v=20261011-friendship/,
  'updated social actions are uncached on mobile');
 
 
@@ -410,5 +410,58 @@ assert.match(fs.readFileSync('game.js','utf8'),/CaminhosWorld\?\.jail\(game,'agr
  'risco de condenacao e prisão implementado');
 assert.match(fs.readFileSync('index.html','utf8'),/career-paths\.js\?v=20261011-combate/,
  'cache de golpes atualizado para iPhone');
+
+
+// Escola abre todas as interacoes; apenas amigos aceitos aparecem em Relacionamentos.
+code("startGame('Teste Amizades','Santos, SP','curioso')");
+code("game.age=8;render()");
+const friendMate=code("game.people.find(p=>p.role==='Colega').id");
+const schoolMateName=code("game.people.find(p=>p.id==="+friendMate+").name");
+const schoolHTML=code("window.CaminhosExtras.renderSchool(game)");
+assert.match(schoolHTML,/data-ui-person/,'school cards open complete person profiles');
+assert.ok(schoolHTML.includes(schoolMateName),'school displays classroom contacts');
+assert.doesNotMatch(code("window.CaminhosUI.renderTab(game,'relacoes')"),new RegExp(schoolMateName),
+ 'a schoolmate is not in Relationships until the friendship is accepted');
+code("window.CaminhosUI.openPerson(game,"+friendMate+")");
+let schoolProfile=code("document.getElementById('modalContent').innerHTML");
+assert.match(schoolProfile,/data-option="aproximar"/,'talking accessible through the School');
+assert.match(schoolProfile,/data-option="agredir"/,'other interactions accessible through the School');
+assert.match(schoolProfile,/data-option="pedir-amizade" disabled/,'request needs bond 65+');
+code("game.people.find(p=>p.id==="+friendMate+").bond=90");
+code("window.CaminhosUI.openPerson(game,"+friendMate+")");
+schoolProfile=code("document.getElementById('modalContent').innerHTML");
+assert.match(schoolProfile,/data-option="pedir-amizade"/,'ask for friendship accessible with good relationship');
+assert.doesNotMatch(schoolProfile,/data-option="pedir-amizade" disabled/,'request enabled after good relationship');
+code("{const prior=Math.random;Math.random=()=>0;try{relationAction("+friendMate+",'pedir-amizade')}finally{Math.random=prior}}");
+assert.equal(code("game.people.find(p=>p.id==="+friendMate+").friend"),true,
+ 'friendship was explicitly requested and accepted');
+assert.ok(code("window.CaminhosUI.renderTab(game,'relacoes')").includes(schoolMateName),
+ 'accepted friend now appears in Relationships');
+assert.match(code("document.getElementById('modalContent').innerHTML"),/aceitou sua amizade/,
+ 'friendship shows confirmation popup');
+code("game.age=18;window.CaminhosExtras.annual(game)");
+assert.equal(code("game.people.find(p=>p.id==="+friendMate+").role"),'Ex-colega',
+ 'graduation preserves contact status without fabricating friendships');
+const anotherClassmate=code("game.people.find(p=>p.role==='Ex-colega'&&!p.friend).id");
+const anotherName=code("game.people.find(p=>p.id==="+anotherClassmate+").name");
+assert.ok(!code("window.CaminhosUI.renderTab(game,'relacoes')").includes(anotherName),
+ 'unbefriended graduates are not automatically added');
+code("game.people.find(p=>p.id==="+anotherClassmate+").bond=84");
+code("game.extra.friendshipInvitationYear=-1");
+code("{const prior=Math.random;Math.random=()=>0;try{game.pendingEvent=window.CaminhosExtras.friendshipInvite(game)}finally{Math.random=prior}}");
+assert.equal(code("game.pendingEvent.source"),'friendship','classmate can invite friendship randomly');
+assert.ok(code("game.pendingEvent.story").includes(anotherName),'friendship invitation identifies actual person');
+code("applyChoice(0)");
+assert.equal(code("game.people.find(p=>p.id==="+anotherClassmate+").friend"),true,'accepted invitation marks friendship');
+assert.ok(code("window.CaminhosUI.renderTab(game,'relacoes')").includes(anotherName),
+ 'friends who invite you also appear in Relationships');
+const thirdClassmate=code("game.people.find(p=>p.role==='Ex-colega'&&!p.friend).id");
+code("game.people.find(p=>p.id==="+thirdClassmate+").bond=82");
+code("game.pendingEvent={source:'friendship',personId:"+thirdClassmate+",title:'Convite',story:'Uma pessoa propôs amizade',choices:[{text:'Sim',delta:{felicidade:4},accept:true},{text:'Não',delta:{felicidade:-1},accept:false}]}");
+code("applyChoice(1)");
+assert.equal(code("game.people.find(p=>p.id==="+thirdClassmate+").friend"),false,
+ 'declining a request does not create friendship');
+assert.ok(!code("window.CaminhosUI.renderTab(game,'relacoes')").includes(code("game.people.find(p=>p.id==="+thirdClassmate+").name")),
+ 'declined invitations remain outside Relationships');
 
 console.log('OK: escola, amigos, professores, bens, empresas, venda, salvamento e navegação.');
