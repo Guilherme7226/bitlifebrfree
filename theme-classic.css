@@ -394,3 +394,42 @@ body{background:#e7edf3;color:#173e65;font-size:15px}
  .skill-details strong{font-size:14px}
  .skill-card button{padding:8px 7px;font-size:10px}
 }
+
+/* Atributos persistentes e clicaveis: somente 4 indicadores gerais;
+   profissao publica ou famosa ganha uma barra profissional sob demanda. */
+.retro-stat-action{
+ appearance:none;-webkit-appearance:none;cursor:pointer;
+ padding:3px 0;margin:0;border:0;background:transparent;
+ font:inherit;color:inherit;text-align:inherit;width:100%;
+}
+.retro-stat-action:focus-visible{outline:2px solid #0a83cc;outline-offset:2px}
+.retro-stat-action:hover .retro-stat-name{color:#007dba}
+@media(min-width:701px){
+ .game>.stats-strip{position:sticky;top:0;z-index:20;box-shadow:0 3px 8px #1b41601f}
+}
+@media(max-width:700px){
+ .game{--stats-sticky-size:79px}
+ .game.has-career-stat{--stats-sticky-size:110px}
+ .game>.stats-strip{
+  position:sticky;
+  top:calc(159px + env(safe-area-inset-top, 0px));
+  z-index:53;
+  min-height:var(--stats-sticky-size);
+  height:var(--stats-sticky-size);
+  overflow:hidden;
+  padding:4px 7px;
+  box-shadow:0 3px 8px #0c38662b;
+ }
+ .game>.stats-strip .retro-stats{
+  gap:3px 9px;
+  padding:3px 5px;
+ }
+ .game>.stats-strip .retro-stat-row{
+  padding:2px 0;
+  min-height:0;
+ }
+ .game .retro-screen-bar{
+  top:calc(159px + env(safe-area-inset-top, 0px) + var(--stats-sticky-size));
+ }
+ html{scroll-padding-top:calc(222px + env(safe-area-inset-top, 0px) + var(--stats-sticky-size))}
+}
