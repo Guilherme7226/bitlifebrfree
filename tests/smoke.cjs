@@ -31,7 +31,7 @@ const ctx=vm.createContext({
  Date,Math,JSON,Intl,URL,Blob,AbortController,
  confirm(){return true},prompt(){return 'Pipoca'}
 });
-for(const file of ['achievements.js','life-extras.js','career-paths.js','sim-world.js','ui-familiar.js','game.js']){
+for(const file of ['achievements.js','dynasty.js','life-extras.js','career-paths.js','sim-world.js','ui-familiar.js','game.js']){
   vm.runInContext(fs.readFileSync(file,'utf8'),ctx,{filename:file});
 }
 function code(src){return vm.runInContext(src,ctx)}
@@ -170,7 +170,7 @@ const iosCss=fs.readFileSync('theme-classic.css','utf8');
 assert.match(iosCss,/height:calc\(64px \+ env\(safe-area-inset-top, 0px\)\)/,'cabeçalho respeita barra de status');
 assert.match(iosCss,/padding-top:env\(safe-area-inset-top, 0px\)/,'reserva vertical segura do iPhone');
 assert.match(iosCss,/top:calc\(159px \+ env\(safe-area-inset-top, 0px\)\)/,'título fixo não invade o cabeçalho');
-assert.match(fs.readFileSync('index.html','utf8'),/theme-classic\.css\?v=20261011-status6/,'cache do iPhone atualizado');
+assert.match(fs.readFileSync('index.html','utf8'),/theme-classic\.css\?v=20261011-dynasty/,'cache do iPhone atualizado');
 assert.doesNotMatch(fs.readFileSync('index.html','utf8'),/data-tab="escola"|data-tab="hobbies"/,'school and martial arts accessed in relevant parent sections');
 const statusCss=fs.readFileSync('theme-classic.css','utf8');
 assert.match(statusCss,/\.game>\.stats-strip\{\s*order:1;/,'status aparecem antes do diario no iPhone');
@@ -181,7 +181,30 @@ code("openMoreMenu()");
 assert.match(code("document.getElementById('modalContent').innerHTML"),/Recomeçar vida/,'reset disponivel em Mais');
 assert.match(fs.readFileSync('cloud.js','utf8'),/async function resetLife\(\)/,'nuvem possui rotina de reset');
 assert.match(fs.readFileSync('cloud.js','utf8'),/\.delete\(\)\.eq\('user_id',uid\)/,'reset apaga backup da conta conectada');
-assert.match(fs.readFileSync('index.html','utf8'),/cloud\.js\?v=20261011-status-reset/,'copia de seguranca no iPhone atualizada');
+assert.match(fs.readFileSync('index.html','utf8'),/cloud\.js\?v=20261011-account-achievements/,'copia de seguranca no iPhone atualizada');
+assert.ok(code('window.CaminhosAchievements.total')>=170,'170+ permanent account achievements');
+const totalBeforeHeir=code('window.CaminhosAchievements.count(game)');
+code("game.alive=true;game.extra.prison=0;game.children=0;game.age=42;game.name='Familia Silva';game.actions=3");
+const newborn=code("window.CaminhosDynasty.birth(game)");
+assert.ok(newborn.includes('Silva'),'child inherits surname');
+assert.equal(code('game.children'),1,'birth creates genealogical record');
+code('game.alive=false;window.CaminhosDynasty.recordDeath(game)');
+assert.equal(code('window.CaminhosDynasty.candidates(game).length'),1,'living descendants appear for succession');
+assert.match(code('window.CaminhosDynasty.render(game)'),/Continuar →/,'heirs can be selected');
+assert.equal(code('window.CaminhosDynasty.chooseHeir(game,2)'),true,'continue as child');
+assert.equal(code('game.alive'),true,'heir continues the save');
+assert.equal(code('game.age'),0,'newborn heir inherits own age');
+assert.equal(code('game.extra.dynasty.transitions'),1,'family succession tracked');
+assert.match(code('window.CaminhosDynasty.render(game)'),/Geração 2/,'family tree keeps generations');
+assert.ok(code('window.CaminhosAchievements.count(game)')>=totalBeforeHeir,'achievements persist after death');
+const permanentTotal=code('window.CaminhosAchievements.count(game)');
+code("startGame('Outra Familia','Santos, SP','curioso')");
+assert.ok(code('window.CaminhosAchievements.count(game)')>=permanentTotal,'achievements survive beginning another life');
+assert.ok(JSON.parse(storage.getItem('caminhos.achievements.account.guest.v2')),'achievements stored separately');
+assert.match(fs.readFileSync('cloud.js','utf8'),/merge_account_achievements/,'atomic account sync');
+assert.match(fs.readFileSync('dynasty.js','utf8'),/function chooseHeir/,'family legacy module present');
+assert.match(fs.readFileSync('index.html','utf8'),/dynasty.js/,'legacy module loaded');
+assert.match(fs.readFileSync('index.html','utf8'),/data-tab="arvore"/,'family navigation enabled');
 code("restartLife()");
 assert.equal(code('game'),null,'reset volta para criacao de personagem');
 assert.equal(storage.getItem('caminhos.save.v1'),null,'reset apaga save local');
