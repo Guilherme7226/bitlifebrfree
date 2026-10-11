@@ -12,9 +12,10 @@
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="description" content="Caminhos: seu simulador de vida com escolhas, carreira, família e histórias inesperadas.">
   <title>Caminhos — Simulador de Vida</title>
-  <link rel="stylesheet" href="styles.css?v=20261011-autosave">
+  <link rel="stylesheet" href="styles.css?v=20261011-assets">
   <script src="achievements.js" defer></script>
-  <script src="game.js?v=20261011-autosave" defer></script>
+  <script src="life-extras.js?v=20261011-bens-escola" defer></script>
+  <script src="game.js?v=20261011-assets" defer></script>
   <script src="cloud-config.js" defer></script>
   <script src="cloud.js?v=20261011-autosave" defer></script>
 </head>
@@ -43,7 +44,7 @@
     <main id="gameView" class="game hidden">
       <section class="profile-banner">
         <div class="profile-avatar" id="avatar">👶</div>
-        <div class="profile-heading"><button type="button" class="profile-home" id="homeShortcut" aria-label="Voltar ao diário da vida">⌂ <span>Início</span></button><div class="eyebrow" id="lifeStage">A PRIMEIRA PÁGINA</div><h1 id="heroName">Alex</h1><div class="profile-sub"><span id="ageLabel">0 anos</span><span class="dot-separator">·</span><span id="jobLabel">Descobrindo o mundo</span><span class="profile-actions" id="profileActions">3 ações</span></div></div>
+        <div class="profile-heading"><button type="button" class="profile-home" id="homeShortcut" aria-label="Voltar ao diário da vida">📖 <span>Diário</span></button><div class="eyebrow" id="lifeStage">A PRIMEIRA PÁGINA</div><h1 id="heroName">Alex</h1><div class="profile-sub"><span id="ageLabel">0 anos</span><span class="dot-separator">·</span><span id="jobLabel">Descobrindo o mundo</span><span class="profile-actions" id="profileActions">3 ações</span></div></div>
         <div class="profile-money"><small>PATRIMÔNIO DISPONÍVEL</small><strong id="moneyLabel">R$ 0</strong><span id="savingsLabel">Investimentos: R$ 0</span><span id="saveStatus" class="save-status" data-save-state="local">Salvo no aparelho</span></div>
       </section>
       <section class="stats-strip" id="statsStrip" aria-label="Atributos do personagem"></section>
@@ -52,6 +53,7 @@
           <button data-tab="vida" class="tab active">✦ <span>Minha vida</span></button>
           <button data-tab="atividades" class="tab">🧭 <span>Atividades</span></button>
           <button data-tab="carreira" class="tab">💼 <span>Carreira</span></button>
+          <button data-tab="escola" class="tab">🏫 <span>Escola</span></button>
           <button data-tab="relacoes" class="tab">♥ <span>Relações</span></button>
           <button data-tab="financas" class="tab">◈ <span>Finanças</span></button>
           <button data-tab="historia" class="tab">☷ <span>Minha história</span></button>
@@ -75,6 +77,7 @@
         <button type="button" data-dock="advance" class="dock-plus" aria-label="Envelhecer um ano"><span aria-hidden="true">+</span>Idade</button>
         <button type="button" data-dock="relacoes" aria-label="Abrir relações"><span aria-hidden="true">💞</span>Relações</button>
         <button type="button" data-dock="atividades" aria-label="Abrir atividades"><span aria-hidden="true">🧭</span>Atividades</button>
+        <button type="button" data-dock="more" aria-label="Abrir outras áreas do jogo"><span aria-hidden="true">⋯</span>Mais</button>
       </nav>
     </main>
     <footer class="app-footer">CAMINHOS • Um jogo original sobre escolhas <span>Feito para jogar, experimentar e recomeçar.</span></footer>
