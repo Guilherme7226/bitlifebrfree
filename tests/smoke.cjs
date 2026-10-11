@@ -88,6 +88,7 @@ assert.match(css,/grid-template-columns:\.9fr \.9fr 1\.1fr \.9fr \.9fr \.8fr/);
 assert.match(code("window.CaminhosWorld.portrait('Helena','Professora',11)"),/<svg/,'NPCs possuem modelo 2D');
 assert.notEqual(code("window.CaminhosWorld.portrait('Helena','Professora',11)"),code("window.CaminhosWorld.portrait('Daniel','Aluno',12)"),'retratos sao individuais');
 assert.match(code('window.CaminhosExtras.renderSchool(game)'),/ensino médio|escolar/i,'ensino medio e formatura apresentados');
+code('game.age=18;game.actions=3');
 assert.equal(code("window.CaminhosPaths.offerGraduation(game)"),true,'convite apos ensino medio');
 click({pathAct:'choose',choice:'faculdade'});
 assert.equal(code("game.extra.lifeRoute.choice"),'faculdade','escolha faculdade apos formatura');
