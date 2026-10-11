@@ -28,33 +28,30 @@ const go=id=>'data-go="'+id+'"';
 const action=id=>'data-act="activity" data-id="'+id+'"';
 function renderActivities(g){
  let out=screen('Atividades');
- out+=separator('Favoritos');
+ out+=separator('Mente, corpo e esportes');
  out+=row('🧘','Mente e corpo','Melhore sua saúde e bem-estar',go('atividades-detalhes'));
- out+=row('🐕','Animais de estimação','Adote e cuide dos seus companheiros',go('pets'));
- out+=separator('Atividades');
- out+=row('🎓','Escola e aprendizado','Aulas, colegas e professores',go('escola'),{disabled:g.age<4});
  out+=row('🥋','Artes marciais','Jiu-jítsu, judô, boxe e mais',go('hobbies'));
+ out+=row('🏃','Praticar esportes','Cuide do corpo',action('esporte'),{disabled:g.age<6||g.actions===0});
+ out+=separator('Atividades');
  out+=row('⚖️','Crime e justiça','Escolhas perigosas e suas consequências',go('desafios'),{disabled:g.age<16});
  out+=row('🏥','Saúde e cuidados','Cuide de sua saúde e hábitos',go('atividades-detalhes'));
  out+=row('🛍️','Compras e patrimônio','Casas, carros, barcos e empresas',go('financas-detalhes'),{disabled:g.age<18});
  out+=row('🎭','Cinema e música','Explore a vida artística',go('fama'),{disabled:g.age<13});
- out+=row('🤝','Relacionamentos','Família, amigos e romance',go('relacoes'));
  out+=row('🏞️','Natureza e passeios','Explore o mundo ao seu redor',action('explorar'),{disabled:g.actions===0});
  out+=row('🎒','Hobbies e lazer','Pratique novos interesses',action('hobby'),{disabled:g.age<6||g.actions===0});
  out+=row('📱','Mídias sociais','Publique e conquiste seguidores',go('fama'),{disabled:g.age<13});
- out+=row('💼','Trabalho e negócios','Empregos, política e empreendedorismo',go('carreira-detalhes'));
  out+=separator('Ações rápidas');
  out+=row('📚','Estudar','Melhore sua inteligência',action('estudar'),{disabled:g.age<6||g.actions===0});
- out+=row('🏃','Praticar esportes','Cuide do corpo',action('esporte'),{disabled:g.age<6||g.actions===0});
  out+=row('🧘','Meditar','Relaxe e alivie o estresse',action('meditar'),{disabled:g.actions===0});
  return out;
 }
 function renderCareer(g){
- const school=g.extra?.school;let out=screen('Profissão');
+ const school=g.extra?.school;let out=screen(g.age<18?'Escola':'Profissão');
  out+=separator('Você');
  if(g.age<18)out+=row('🏫',g.age<4?'Primeiros anos':g.age<6?'Educação infantil':g.age<11?'Ensino fundamental I':g.age<15?'Ensino fundamental II':'Ensino médio',
  'Notas '+Math.round(school?.average||0)+'/100 · Professores e colegas',go('escola'),{disabled:g.age<4});
  else{
+  out+=row('🏫','Histórico escolar','Notas, colegas e professores que marcaram sua vida',go('escola'));
   if(g.job)out+=row('💼',g.job.replaceAll('_',' '),'Trabalho atual · Toque para detalhes',go('carreira-detalhes'));
   if(g.university)out+=row('🎓','Faculdade em andamento','Veja curso e tempo restante',go('carreira-detalhes'));
   if(!g.job&&!g.university)out+=row('📋','Procurando oportunidades','Seu futuro profissional começa aqui',go('carreira-detalhes'));
@@ -108,7 +105,12 @@ function renderRelationships(g){
  out+=peopleGroup(g,people.filter(p=>p.role?.includes('Professor')),'Professores');
  out+=peopleGroup(g,people.filter(p=>!['Mãe','Pai','Padrasto','Madrasta','Filho','Filha','Cônjuge','Colega','Amizade','Namoro','Ex-relacionamento'].includes(p.role)&&!p.role?.includes('Professor')),'Outras pessoas');
  out+=separator('Animais de estimação');
- out+=row('🐾','Meus animais','Cuidar, brincar e adotar pets',go('pets'));
+ const pets=g.extra?.pets||[];
+ for(const pet of pets){
+  const kind={cachorro:'Cachorro',gato:'Gato',coelho:'Coelho',passaro:'Pássaro',peixe:'Peixe'}[pet.species]||'Pet';
+  out+=row('🐾',pet.name,kind+' · '+pet.age+' ano(s) · vínculo e cuidados',go('pets'));
+ }
+ out+=row('🐾','Adotar ou cuidar dos pets','Alimentação, saúde e brincadeiras',go('pets'));
  out+=separator('Vida amorosa');
  out+=row('💞','Encontrar alguém','Novos encontros e relacionamentos',go('relacoes-detalhes'),{disabled:g.age<16});
  return out;
