@@ -223,6 +223,38 @@ function martialState(g,id){
  if(!g.extra.martialArts[id])g.extra.martialArts[id]={skill:0,trainings:0,wins:0,medals:0};
  return g.extra.martialArts[id];
 }
+// Golpes disponíveis para interações fictícias. Cada técnica é desbloqueada
+// somente após treinar a modalidade e atingir a habilidade necessária.
+const BASIC_MOVES=[
+ {id:'tapa',name:'Tapa',emoji:'✋',art:'Básico',power:1,risk:1},
+ {id:'empurrao',name:'Empurrão',emoji:'🫸',art:'Básico',power:1,risk:2},
+ {id:'soco',name:'Soco simples',emoji:'👊',art:'Básico',power:2,risk:2}
+];
+const MARTIAL_MOVES={
+ jiujitsu:[['queda','Queda',25,3],['imobilizacao','Imobilização',60,4]],
+ judo:[['projecao','Projeção',25,3],['imobilizacao-judo','Imobilização',60,4]],
+ karate:[['soco-karate','Soco de karatê',25,3],['chute-karate','Chute avançado',60,4]],
+ taekwondo:[['chute-taekwondo','Chute lateral',25,3],['giro-taekwondo','Chute giratório',60,5]],
+ muaythai:[['cotovelada','Cotovelada',25,3],['joelhada','Joelhada',60,5]],
+ boxe:[['cruzado','Cruzado',25,3],['gancho','Gancho',60,4]],
+ capoeira:[['meialua','Meia-lua',25,3],['armada','Armada',60,4]],
+ kungfu:[['golpe-circular','Golpe circular',25,3],['sequencia-kungfu','Sequência avançada',60,4]]
+};
+function combatMoves(g){
+ ensure(g);
+ const result=BASIC_MOVES.map(m=>({...m,skill:0}));
+ for(const art of MARTIAL){
+  const progress=g.extra.martialArts[art.id];
+  if(!progress||progress.trainings<1)continue;
+  const skill=Math.max(0,Number(progress.skill)||0);
+  for(const [id,name,minSkill,power] of MARTIAL_MOVES[art.id]||[]){
+   if(skill>=minSkill){
+    result.push({id,name,emoji:art.emoji,art:art.name,skill,power,risk:power,minSkill});
+   }
+  }
+ }
+ return result;
+}
 function levelName(art,skill){
  if(!art.belt)return skill>=90?'Elite':skill>=65?'Avançado':skill>=35?'Intermediário':'Iniciante';
  const belt=(art.capoeira?CORDS:BELTS);
@@ -288,5 +320,5 @@ document.addEventListener('click',ev=>{
  if(action==='martial-compete')martialAction(game,button.dataset.id,'compete');
 });
 window.CaminhosPaths={ensure,onAnnual,entryReason,jobReason,salary,rankName,serviceBadge,renderServices,
- futureChoice,openGraduation,offerGraduation,leave,renderMartial,martialAction,resetFuture,services:SERVICES};
+ futureChoice,openGraduation,offerGraduation,leave,renderMartial,martialAction,combatMoves,resetFuture,services:SERVICES};
 })();
