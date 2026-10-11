@@ -73,7 +73,186 @@ function ensure(g){
      g.people.push({id,name,role,emoji:role==='Colega'?'🧑‍🎓':'👩‍🏫',bond:rand(37,71),friend:false,schoolmate:true});
    }
  }
+ initClubs(g);
 }
+
+const SCHOOL_CLUBS=[
+ ['ciencias','🔬','Clube de Ciências'],
+ ['esportes','⚽','Clube Esportivo'],
+ ['teatro','🎭','Clube de Teatro'],
+ ['musica','🎵','Clube de Música'],
+ ['debate','🗣️','Clube de Debate']
+];
+function initClubs(g){
+ const s=g.extra.school;
+ if(s.clubs&&typeof s.clubs==='object'&&Array.isArray(s.clubs.list))return;
+ if(g.age<4||g.age>=18||s.finished)return;
+ const existing=g.people.filter(p=>p.role==='Colega');
+ const used=new Set(g.people.map(p=>p.name));
+ const pool=['Gabriel','Vitor','Melissa','Bruna','Rafael','Camila','Yasmin','Diego','Fernanda','Henrique','Beatriz','Daniela'];
+ while(existing.length<10){
+  const index=existing.length;
+  const name=pool.find(n=>!used.has(n))||'Estudante '+(index+1);
+  used.add(name);
+  const id=Math.max(0,...g.people.map(p=>Number(p.id)||0))+1;
+  const person={id,name,role:'Colega',emoji:'🧑‍🎓',bond:rand(35,67),friend:false,schoolmate:true};
+  g.people.push(person);existing.push(person);
+ }
+ s.clubs={
+  activeId:null,popularity:0,prestige:20,participation:0,status:'Fora do clube',joinedAge:null,
+  lastActivityYear:-1,activityCount:0,lastElectionYear:-1,
+  list:SCHOOL_CLUBS.map(([id,emoji,name],i)=>({
+   id,emoji,name,members:Array.from({length:4},(_,j)=>existing[(i*2+j)%existing.length].id)
+  }))
+ };
+}
+function clubFeedback(g,title,story){
+ const s=g.extra.school,cl=s.clubs;
+ logLine(title,story);
+ save();render();
+ showModal('<div class="relationship-result"><div class="relationship-result-icon">🏅</div>'+
+  '<div class="card-kicker">VIDA ESCOLAR · CLUBE</div><h2 id="modalTitle">'+clean(title)+'</h2>'+
+  '<p>'+clean(story)+'</p>'+
+  '<div class="relationship-result-score"><span>Sua popularidade no clube</span><strong>'+Math.round(cl.popularity)+'/100</strong></div>'+
+  '<div class="relationship-result-info"><span>Função: <b>'+clean(cl.status)+'</b></span>'+
+  '<span>Prestígio do clube: '+Math.round(cl.prestige)+'/100</span>'+
+  '<span>Participações: '+Math.round(cl.participation)+'</span></div>'+
+  '<button type="button" class="secondary-button relationship-result-close" data-act="dismiss-result">Entendi</button></div>');
+}
+function schoolClubAction(g,action,id){
+ ensure(g);initClubs(g);
+ const s=g.extra.school,cl=s.clubs;
+ if(!cl||!g.alive||g.age<4||g.age>17||s.finished)return showToast('Clubes estão disponíveis durante a vida escolar.');
+ if(g.pendingEvent)return showEvent();
+ if(g.extra?.prison>0)return showToast('Você não pode participar enquanto está preso.');
+ const current=cl.list.find(v=>v.id===cl.activeId);
+ if(action==='join'){
+  const target=cl.list.find(v=>v.id===id);
+  if(!target)return;
+  if(current)return showToast('Saia do clube atual antes de participar de outro.');
+  cl.activeId=target.id;cl.joinedAge=g.age;cl.popularity=rand(12,25);
+  cl.prestige=rand(18,35);cl.participation=0;cl.status='Integrante';
+  cl.activityCount=0;cl.lastActivityYear=g.age;
+  return clubFeedback(g,'Você entrou no '+target.name,
+   'Você agora faz parte do clube e conheceu seus integrantes. Participe para ganhar popularidade e concorrer à liderança.');
+ }
+ if(!current)return showToast('Entre em um clube escolar primeiro.');
+ if(action==='leave'){
+  const old=current.name;
+  cl.activeId=null;cl.status='Fora do clube';cl.popularity=0;cl.participation=0;
+  return clubFeedback(g,'Você saiu do '+old,
+   'Você decidiu deixar o clube. Para crescer em outro, será necessário participar novamente.');
+ }
+ const yearCount=cl.lastActivityYear===g.age?cl.activityCount:0;
+ if(action==='practice'||action==='organize'||action==='help'){
+  cl.activityCount=yearCount+1;cl.lastActivityYear=g.age;
+  cl.participation++;
+  // A repeticao reduz o ganho por acao, mas não ha um limite anual.
+  const penalty=Math.floor(yearCount/4);
+  let pop=0,prestige=0,story='',title='';
+  if(action==='practice'){
+   pop=Math.max(0,rand(4,9)-penalty);prestige=rand(0,2);
+   statChange({inteligencia:current.id==='ciencias'||current.id==='debate'?2:0,
+     felicidade:2,saude:current.id==='esportes'?2:0});
+   title='Encontro do '+current.name;
+   story='Você participou das atividades e aprendeu mais com os outros alunos.';
+  }else if(action==='help'){
+   pop=Math.max(0,rand(5,11)-penalty);prestige=rand(1,3);
+   title='Você ajudou o clube';
+   story='Você organizou materiais, apoiou os colegas e ganhou reconhecimento.';
+  }else{
+   const success=Math.random()<Math.max(.15,Math.min(.9,.38+cl.popularity/190));
+   pop=success?Math.max(0,rand(8,15)-penalty):rand(-5,-2);
+   prestige=success?rand(5,11):-rand(2,5);
+   title=success?'Evento do clube foi um sucesso':'O evento do clube teve problemas';
+   story=success?'Você ajudou a organizar um evento que impressionou a escola.':
+    'O evento não saiu como esperado, mas você aprendeu com a experiência.';
+  }
+  cl.popularity=clamp(cl.popularity+pop);
+  cl.prestige=clamp(cl.prestige+prestige);
+  for(const mid of current.members){
+   const member=g.people.find(p=>p.id===mid);if(!member)continue;
+   if(action==='organize'&&pop<0)member.bond=clamp(member.bond-1);
+   else member.bond=clamp(member.bond+(cl.participation%2===0?1:0));
+  }
+  if(cl.popularity>=45&&cl.participation>=3&&cl.status==='Integrante'){
+   cl.status='Coordenador(a)';
+   story+=' Você conquistou o cargo de coordenador(a) do clube.';
+  }
+  if(cl.status==='Líder'&&cl.popularity<25){
+   cl.status='Integrante';story+=' Os integrantes decidiram substituir você na liderança.';
+  }
+  return clubFeedback(g,title,story+' Popularidade: '+(pop>=0?'+':'')+pop+'.');
+ }
+ if(action==='campaign'){
+  if(cl.popularity<40)return showToast('Você precisa de popularidade 40/100 para buscar apoio.');
+  if(cl.status==='Líder')return showToast('Você já lidera o clube.');
+  const member=g.people.find(p=>p.id===current.members[Math.floor(Math.random()*current.members.length)]);
+  const supported=member&&(member.bond>=45)&&Math.random()<.7;
+  const gain=supported?rand(3,7):rand(-4,-1);
+  cl.popularity=clamp(cl.popularity+gain);
+  if(member)member.bond=clamp(member.bond+(supported?2:-3));
+  return clubFeedback(g,supported?'Apoio à sua candidatura':'Faltou apoio no clube',
+    member?(supported?member.name+' apoiou sua candidatura a líder.':member.name+' não gostou da campanha e preferiu outro candidato.'):
+    'Você tentou reunir apoio, mas ainda precisa conversar com outros integrantes.');
+ }
+ if(action==='leader'){
+  if(cl.status==='Líder')return showToast('Você já é líder.');
+  if(cl.popularity<65||cl.participation<5)return showToast('Para concorrer: popularidade de 65 e 5 participações.');
+  if(cl.lastElectionYear===g.age)return showToast('Já houve eleição neste ano. Tente novamente no próximo.');
+  cl.lastElectionYear=g.age;
+  const votes=current.members.filter(mid=>(g.people.find(p=>p.id===mid)?.bond||0)>=50).length;
+  const elected=Math.random()<Math.max(.12,Math.min(.91,.22+cl.popularity/170+votes*.045));
+  if(elected){cl.status='Líder';cl.popularity=clamp(cl.popularity+10);cl.prestige=clamp(cl.prestige+6);
+   statChange({felicidade:8});}
+  else{cl.popularity=clamp(cl.popularity-7);}
+  return clubFeedback(g,elected?'Você foi eleito(a) líder!':'Você perdeu a eleição',
+   elected?'Os integrantes do '+current.name+' votaram em você! Agora você poderá liderar atividades e melhorar o prestígio do clube.':
+    'Outra pessoa venceu a eleição. Fortaleça sua popularidade e a relação com os membros para tentar novamente no próximo ano.');
+ }
+}
+function renderClubs(g){
+ const s=g.extra.school,cl=s.clubs;
+ if(!cl)return '';
+ const active=cl.list.find(x=>x.id===cl.activeId);
+ const allowed=g.age>=4&&g.age<18&&!s.finished&&g.alive&&!g.pendingEvent&&!g.extra?.prison;
+ let html='<div class="section-title">🏅 Clubes escolares <small>Atividades e liderança</small></div>';
+ if(!active){
+  html+='<div class="notice">Escolha um clube, conheça alunos e construa sua reputação. Os clubes não adicionam automaticamente pessoas a Relacionamentos.</div>';
+  html+='<div class="school-club-list">'+cl.list.map(v=>
+   '<div class="card school-club-card"><div class="school-club-heading"><span class="school-club-emoji">'+v.emoji+'</span>'+
+   '<div><strong>'+clean(v.name)+'</strong><small>'+v.members.length+' integrantes · eleição de liderança</small></div></div>'+
+   '<button type="button" class="secondary-button" data-life-extra="club" data-id="join" data-club="'+v.id+'" '+(!allowed?'disabled':'')+'>Participar do clube</button></div>'
+  ).join('')+'</div>';
+  return html;
+ }
+ html+='<div class="card school-club-card"><div class="school-club-heading"><span class="school-club-emoji">'+active.emoji+'</span>'+
+  '<div><strong>'+clean(active.name)+'</strong><small>'+clean(cl.status)+'</small></div></div>'+
+  '<div class="school-club-stats">'+
+  '<span>Popularidade <b>'+Math.round(cl.popularity)+'/100</b></span>'+
+  '<div class="retro-relationship-track"><span style="width:'+clamp(cl.popularity)+'%"></span></div>'+
+  '<span>Prestígio <b>'+Math.round(cl.prestige)+'/100</b></span>'+
+  '<div class="retro-relationship-track"><span style="width:'+clamp(cl.prestige)+'%"></span></div>'+
+  '<span>Participações <b>'+Math.round(cl.participation)+'</b></span></div>'+
+  '<div class="school-club-actions">'+[
+   ['practice','📚 Participar da reunião'],['help','🤝 Ajudar os integrantes'],
+   ['organize','🎉 Organizar um evento'],['campaign','🗣️ Buscar votos'],
+   ['leader','🏅 Candidatar-se a líder'],['leave','🚪 Sair do clube']
+  ].map(([action,label])=>'<button type="button" class="secondary-button" data-life-extra="club" data-id="'+action+'" '+
+    (!allowed||action==='leader'&&(cl.popularity<65||cl.participation<5||cl.status==='Líder')||
+     action==='campaign'&&(cl.popularity<40||cl.status==='Líder')?'disabled':'')+'>'+label+'</button>').join('')+'</div>'+
+  '<p class="muted small">Liderança: 65 de popularidade e 5 participações. Fazer amizades com os colegas aumenta suas chances.</p></div>';
+ html+='<div class="section-title">Alunos do clube <small>'+active.members.length+'</small></div><div class="school-list">'+
+  active.members.map(mid=>{
+   const p=g.people.find(p=>Number(p.id)===Number(mid));if(!p)return '';
+   return '<div class="school-person"><div class="school-icon portrait-holder">'+
+     (window.CaminhosWorld?.portrait(p.name,p.role,p.id)||clean(p.emoji))+'</div><div><strong>'+clean(p.name)+'</strong>'+
+     '<small>Vínculo '+Math.round(p.bond)+'/100 · '+(p.friend?'💚 Amigo(a)':'Conhecido(a)')+'</small></div>'+
+     '<button type="button" class="secondary-button" data-ui-person="'+Number(p.id)+'" '+(!g.alive?'disabled':'')+'>Interagir →</button></div>';
+  }).join('')+'</div>';
+ return html;
+}
+
 function lifeStageSchool(g){
  if(g.age<4)return 'Pré-escola disponível a partir dos 4 anos';
  if(g.age<=5)return 'Educação infantil';
@@ -195,11 +374,12 @@ function renderSchool(g){
  '<div><small>Destaques</small><strong>'+Math.round(s.awards)+'</strong></div></div></div>';
  if(current){
    const available=g.alive&&!g.pendingEvent&&!g.extra.prison;
-   const options=[['study','📖 Estudar para a prova'],['homework','📝 Fazer lição'],['project','🔬 Participar de projeto'],['friends','🤝 Brincar com os colegas'],['teacher','🙋 Pedir ajuda ao professor'],['club','🎭 Clube escolar'],...(g.age>=15?[['vestibular','📚 Preparação para faculdade']]:[])];
+   const options=[['study','📖 Estudar para a prova'],['homework','📝 Fazer lição'],['project','🔬 Participar de projeto'],['friends','🤝 Brincar com os colegas'],['teacher','🙋 Pedir ajuda ao professor'],...(g.age>=15?[['vestibular','📚 Preparação para faculdade']]:[])];
    out+='<div class="section-title">Vida escolar <small>Prática livre</small></div><div class="school-actions">'+
     options.map(([id,label])=>'<button type="button" class="secondary-button" data-life-extra="school" data-id="'+id+'" '+(!available?'disabled':'')+'>'+label+'</button>').join('')+'</div>';
    if(g.pendingEvent)out+='<div class="notice">Resolva a decisão pendente para realizar atividades escolares.</div>';
  }
+ out+=renderClubs(g);
  out+='<div class="section-title">Meus colegas <small>'+mates.length+'</small></div><div class="school-list">'+mates.map(personCard).join('')+'</div>';
  out+='<div class="section-title">Professores <small>'+teachers.length+'</small></div><div class="school-list">'+teachers.map(personCard).join('')+'</div>';
  out+='<div class="notice">Interaja com colegas e professores aqui na Escola. Somente amizades aceitas aparecerão em Relacionamentos. Os personagens são fictícios.</div>';
@@ -331,7 +511,8 @@ document.addEventListener('click',event=>{
  const action=btn.dataset.lifeExtra;
  if(action==='filter'){filter=btn.dataset.id in TYPES?btn.dataset.id:'todos';render();return}
  if(action==='school'||action==='talk'){schoolAction(game,action==='talk'?'talk':btn.dataset.id,btn.dataset.person);return}
+ if(action==='club'){schoolClubAction(game,btn.dataset.id,btn.dataset.club);return}
  if(['buy','sell','upgrade'].includes(action))assetsAction(game,action,btn.dataset.id,btn.dataset.inventory);
 });
-window.CaminhosExtras={ensure,annual,wealth,worth,renderSchool,renderAssets,businessCards,schoolAction,friendshipInvite,friendshipDecision};
+window.CaminhosExtras={ensure,annual,wealth,worth,renderSchool,renderAssets,businessCards,schoolAction,schoolClubAction,friendshipInvite,friendshipDecision};
 })();
