@@ -31,7 +31,7 @@ const ctx=vm.createContext({
  Date,Math,JSON,Intl,URL,Blob,AbortController,
  confirm(){return true},prompt(){return 'Pipoca'}
 });
-for(const file of ['achievements.js','dynasty.js','life-extras.js','career-paths.js','sim-world.js','ui-familiar.js','game.js']){
+for(const file of ['achievements.js','dynasty.js','skills.js','everyday.js','life-extras.js','career-paths.js','sim-world.js','ui-familiar.js','game.js']){
   vm.runInContext(fs.readFileSync(file,'utf8'),ctx,{filename:file});
 }
 function code(src){return vm.runInContext(src,ctx)}
@@ -40,6 +40,8 @@ function click(dataset){
    if(selector==='[data-life-extra]'&&dataset.lifeExtra)return this;
    if(selector==='[data-path-act]'&&dataset.pathAct)return this;
    if(selector==='[data-world-action]'&&dataset.worldAction)return this;
+   if(selector==='[data-everyday]'&&dataset.everyday)return this;
+   if(selector==='[data-skill-train]'&&dataset.skillTrain)return this;
    return null;
  }};
  for(const listener of (listeners.click||[]))listener({target});
@@ -54,7 +56,7 @@ assert.match(code('window.CaminhosExtras.renderSchool(game)'),/Vida escolar/);
 const oldScore=code('game.extra.school.average');
 click({lifeExtra:'school',id:'study'});
 assert.ok(code('game.extra.school.average')>oldScore,'studying improves school average');
-assert.equal(code('game.actions'),2,'school action costs an action');
+assert.equal(code('game.actions'),3,'school action no longer consumes any annual quota');
 const teacher=code("game.people.find(p=>p.role==='Professor(a)').id");
 const oldTeacherBond=code("game.people.find(p=>p.id==="+teacher+").bond");
 click({lifeExtra:'talk',person:teacher});
@@ -170,7 +172,7 @@ const iosCss=fs.readFileSync('theme-classic.css','utf8');
 assert.match(iosCss,/height:calc\(64px \+ env\(safe-area-inset-top, 0px\)\)/,'cabeçalho respeita barra de status');
 assert.match(iosCss,/padding-top:env\(safe-area-inset-top, 0px\)/,'reserva vertical segura do iPhone');
 assert.match(iosCss,/top:calc\(159px \+ env\(safe-area-inset-top, 0px\)\)/,'título fixo não invade o cabeçalho');
-assert.match(fs.readFileSync('index.html','utf8'),/theme-classic\.css\?v=20261011-dynasty/,'cache do iPhone atualizado');
+assert.match(fs.readFileSync('index.html','utf8'),/theme-classic\.css\?v=20261011-inheritance/,'cache do iPhone atualizado');
 assert.doesNotMatch(fs.readFileSync('index.html','utf8'),/data-tab="escola"|data-tab="hobbies"/,'school and martial arts accessed in relevant parent sections');
 const statusCss=fs.readFileSync('theme-classic.css','utf8');
 assert.match(statusCss,/\.game>\.stats-strip\{\s*order:1;/,'status aparecem antes do diario no iPhone');
@@ -183,6 +185,21 @@ assert.match(fs.readFileSync('cloud.js','utf8'),/async function resetLife\(\)/,'
 assert.match(fs.readFileSync('cloud.js','utf8'),/\.delete\(\)\.eq\('user_id',uid\)/,'reset apaga backup da conta conectada');
 assert.match(fs.readFileSync('index.html','utf8'),/cloud\.js\?v=20261011-account-achievements/,'copia de seguranca no iPhone atualizada');
 assert.ok(code('window.CaminhosAchievements.total')>=170,'170+ permanent account achievements');
+assert.match(code("window.CaminhosUI.renderTab(game,'atividades')"),/Hobbies e coisas em geral|Habilidades|Lazer/,'activities grouped into lifestyle sections');
+assert.match(code('window.CaminhosSkills.render(game)'),/Violão/,'musical talents available');
+code("game.age=24;game.extra.prison=0;game.alive=true;game.pendingEvent=null;game.actions=0");
+const prevSkill=code("window.CaminhosSkills.score(game,'violao').level");
+click({skillTrain:'violao'});
+click({skillTrain:'violao'});
+click({skillTrain:'violao'});
+assert.equal(code("window.CaminhosSkills.score(game,'violao').trainings"),3,'practices repeat within same year');
+assert.ok(code("window.CaminhosSkills.score(game,'violao').level")>prevSkill,'practice raises skill');
+assert.equal(code("game.actions"),0,'practices do not require actions quota');
+const oldHappiness=code('game.stats.felicidade');
+click({everyday:'cinema'});
+assert.ok(code('game.stats.felicidade')>=oldHappiness,'cinema leisure changes happiness');
+assert.match(code('window.CaminhosEveryday.renderMenu(game)'),/Ir ao médico/,'medical visits enabled');
+assert.match(code("window.CaminhosEveryday.randomEvent(game).story"),/.+/,'random event has story');
 const totalBeforeHeir=code('window.CaminhosAchievements.count(game)');
 code("game.alive=true;game.extra.prison=0;game.children=0;game.age=42;game.name='Familia Silva';game.actions=3");
 const newborn=code("window.CaminhosDynasty.birth(game)");
@@ -205,6 +222,18 @@ assert.match(fs.readFileSync('cloud.js','utf8'),/merge_account_achievements/,'at
 assert.match(fs.readFileSync('dynasty.js','utf8'),/function chooseHeir/,'family legacy module present');
 assert.match(fs.readFileSync('index.html','utf8'),/dynasty.js/,'legacy module loaded');
 assert.match(fs.readFileSync('index.html','utf8'),/data-tab="arvore"/,'family navigation enabled');
+// Health zero must cause immediate death and a succession-ready screen.
+code("startGame('Saude Teste','Santos, SP','curioso')");
+code('game.age=39;game.stats.saude=1');
+code('statChange({saude:-1});save()');
+assert.equal(code('game.stats.saude'),0,'health clamped to zero');
+assert.equal(code('game.alive'),false,'health 0 immediately kills the character');
+assert.equal(code('game.extra.dynasty.pastLives.length'),1,'death registered for family lineage');
+assert.match(code("document.getElementById('modalContent').innerHTML"),/legado/,'shows succession dialog');
+code("startGame('Outra Vida','Santos, SP','curioso')");
+code('game.age=22;game.stats.saude=1;game.pendingEvent={source:"offline",title:"Evento",story:"Escolha",choices:[{text:"Arriscar",delta:{saude:-5}}]};applyChoice(0)');
+assert.equal(code('game.alive'),false,'a risky choice that reaches health zero immediately ends the life');
+assert.match(code('game.lastEvent'),/saúde|Saúde/,'journal records health zero death');
 code("restartLife()");
 assert.equal(code('game'),null,'reset volta para criacao de personagem');
 assert.equal(storage.getItem('caminhos.save.v1'),null,'reset apaga save local');
