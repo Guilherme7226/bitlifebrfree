@@ -100,7 +100,11 @@ function annual(g){
   logLine('Você ficou doente','Sintomas de '+x.illness.toLowerCase()+' surgiram. Procure um médico em Atividades para iniciar os cuidados.');
  }
  // Há risco natural mínimo de acidentes mesmo com escolhas seguras.
- if(Math.random()<.000045){harm(g,'reckless');}
+ if(Math.random()<.00005){
+   x.accidents++;x.disasters++;g.stats.saude=0;g.alive=false;
+   window.CaminhosDynasty?.recordDeath(g);
+   logLine('Acidente inesperado','Um acidente extremamente raro encerrou a vida de '+g.name+'. Sua família poderá continuar a história.');
+ }
 }
 function randomEvent(g){
  const list=SCENES.filter(x=>g.age>=x.minAge&&(!g.extra?.everyday?.illness||x.id!=='remedio'));
@@ -128,6 +132,7 @@ function execute(g,id){
  if(id==='emprestimo'){if(x.debt>0)return showToast('Pague seu empréstimo atual antes de contratar outro.');if(g.job===null)return showToast('Você precisa ter emprego para conseguir crédito.');const amount=Math.max(2500,Math.min(35000,Math.round((g.stats.disciplina+g.stats.inteligencia)*150)));x.debt=amount;g.cash+=amount;logLine('Empréstimo aprovado','Você recebeu '+brl(amount)+' e deverá pagar o empréstimo com juros anuais.');save();render();return}
  if(id==='loteria'&&used>=1)return showToast('Você já comprou um bilhete nesta edição anual da loteria.');
  if(id==='adotar-crianca'&&used>=1)return showToast('Você já realizou uma adoção neste ano.');
+ if(id==='adotar-crianca'&&g.children>=12)return showToast('O limite familiar foi atingido nesta simulação.');
  const cost=opt[6];
  if(g.cash<cost)return showToast('Saldo insuficiente: '+brl(cost)+'.');
  g.cash-=cost;x.actionCounts[dateKey]=used+1;
@@ -146,7 +151,7 @@ function execute(g,id){
  case 'meditacao':small('felicidade',Math.max(1,7-used));desc='Você dedicou um tempo para meditar.';break;
  case 'loteria':{const prob=(g.extra.luck||50)/20000;const win=Math.random()<prob;if(win){const prize=rnd(1000,150000);g.cash+=prize;x.lotteryWins++;desc='Sorte grande! Você ganhou '+brl(prize)+' na loteria.'}else desc='Você comprou um bilhete, mas não foi premiado.';break;}
  case 'processar':{const success=Math.random()<(.2+g.stats.inteligencia/250);if(success){const prize=rnd(1000,7500);g.cash+=prize;desc='Você venceu o processo e recebeu '+brl(prize)+'.'}else{const fees=rnd(250,1100);g.cash-=fees;desc='Você perdeu a ação e precisou pagar '+brl(fees)+' em custas.';}break;}
- case 'emigrar':{const places=['Portugal','Canadá','Japão','Alemanha','Argentina','Austrália'];const next=places[rnd(0,places.length-1)];x.country=next;g.city='Cidade de '+next;g.job=null;g.jobYears=0;desc='Você se mudou para '+next+' e precisa reconstruir sua carreira.';break;}
+ case 'emigrar':{const places=['Portugal','Canadá','Japão','Alemanha','Argentina','Austrália'];const next=places[rnd(0,places.length-1)];x.country=next;g.city='Cidade de '+next;window.CaminhosPaths?.leave(g);g.job=null;g.jobYears=0;desc='Você se mudou para '+next+' e precisa reconstruir sua carreira.';break;}
  case 'adotar-crianca':{if(g.children>=12)return showToast('A família já tem o número máximo de filhos nesta simulação.');const child=window.CaminhosDynasty?.birth(g);x.adoptions++;small('felicidade',11);desc='Você adotou '+(child||'uma criança')+'. A família ganhou mais um integrante.';break;}
  case 'leitura':small('inteligencia',Math.max(1,7-used));desc='Você passou um tempo lendo e estudando.';break;
  case 'voluntariado':small('carisma',Math.max(1,8-used));small('felicidade',5);desc='Você participou de uma ação voluntária.';break;
@@ -155,13 +160,21 @@ function execute(g,id){
  logLine(opt[2],desc);save();render();showToast(desc);
 }
 function renderMenu(g){
- const x=ensure(g);const sections=['Lazer','Habilidades e hobbies','Saúde e bem-estar','Sorte e dinheiro','Vida e família'];
- let html='<div class="notice" style="margin:10px 12px"><strong>🎲 Sorte e talento</strong><p>Você tem '+(g.extra?.luck??50)+'% de sorte. Treine habilidades livremente: seu talento natural acelera o aprendizado.</p></div>';
- for(const cat of sections){
-  html+='<div class="retro-section-title">'+esc(cat)+'</div>';
-  for(const [id,icon,title,sub,group,min,cost] of THINGS.filter(a=>a[4]===cat)){
-   let disabled=!g.alive||g.age<min||g.extra?.prison>0;
-   let detail=sub+(min>g.age?' · A partir dos '+min+' anos':'')+((cost>0&&g.age>=min&&id!=='adotar-crianca')?' · '+brl(cost):'');
+ ensure(g);
+ let html='<div class="notice" style="margin:10px 12px"><strong>🍀 Sorte: '+(g.extra?.luck??50)+'%</strong><p>Atividades comuns e treinos podem ser repetidos sem limite anual. Talento e dedicação afetam seu desenvolvimento; situações arriscadas podem causar acidentes.</p></div>';
+ const groups=[
+  {name:'Lazer',sub:'Passeios, descanso e diversão',ids:['cinema','ferias','balada','parque','restaurante','viagem']},
+  {name:'Habilidades',sub:'Estudo, instrumentos, esportes e bem-estar',ids:['habilidades','artes-marciais','leitura','academia','meditacao','voluntariado']},
+  {name:'Hobbies e coisas em geral',sub:'Saúde, finanças e grandes decisões',ids:['medico','terapia','loteria','emprestimo','pagar-emprestimo','processar','emigrar','adotar-crianca']}
+ ];
+ for(const group of groups){
+  html+='<div class="retro-section-title">'+esc(group.name)+'</div>'+
+   '<p class="activity-subheading">'+esc(group.sub)+'</p>';
+  for(const id of group.ids){
+   const opt=THINGS.find(x=>x[0]===id);if(!opt)continue;
+   const [,icon,title,desc,,min,cost]=opt;
+   const disabled=!g.alive||g.age<min||g.extra?.prison>0;
+   const detail=desc+(g.age<min?' · A partir dos '+min+' anos':cost>0?' · '+brl(cost):'');
    html+='<button type="button" class="retro-menu-row'+(disabled?' retro-disabled':'')+'" data-everyday="'+id+'" '+(disabled?'disabled':'')+'><span class="retro-row-symbol">'+icon+'</span><span class="retro-row-copy"><strong>'+esc(title)+'</strong><span>'+esc(detail)+'</span></span><span class="retro-row-end">›</span></button>';
   }
  }
