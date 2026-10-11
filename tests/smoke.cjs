@@ -172,7 +172,7 @@ const iosCss=fs.readFileSync('theme-classic.css','utf8');
 assert.match(iosCss,/height:calc\(64px \+ env\(safe-area-inset-top, 0px\)\)/,'cabeçalho respeita barra de status');
 assert.match(iosCss,/padding-top:env\(safe-area-inset-top, 0px\)/,'reserva vertical segura do iPhone');
 assert.match(iosCss,/top:calc\(159px \+ env\(safe-area-inset-top, 0px\)\)/,'título fixo não invade o cabeçalho');
-assert.match(fs.readFileSync('index.html','utf8'),/theme-classic\.css\?v=20261011-social-results/,'cache do iPhone atualizado');
+assert.match(fs.readFileSync('index.html','utf8'),/theme-classic\.css\?v=20261011-social-extended/,'cache do iPhone atualizado');
 assert.doesNotMatch(fs.readFileSync('index.html','utf8'),/data-tab="escola"|data-tab="hobbies"/,'school and martial arts accessed in relevant parent sections');
 const statusCss=fs.readFileSync('theme-classic.css','utf8');
 assert.match(statusCss,/\.game>\.stats-strip\{\s*order:1;/,'status aparecem antes do diario no iPhone');
@@ -245,7 +245,7 @@ assert.doesNotMatch(code("window.CaminhosSkills.render(game)"),/Sorte:|🍀/,'ha
 assert.doesNotMatch(code("window.CaminhosEveryday.renderMenu(game)"),/Sorte:\\s*\\d+|🍀/,'atividades nao mostram percentual da sorte');
 assert.match(fs.readFileSync('skills.js','utf8'),/const luck=g\.extra\.luck/,'talento ainda usa sorte nos calculos');
 assert.match(fs.readFileSync('everyday.js','utf8'),/const prob=\(g\.extra\.luck/,'loteria ainda usa sorte interna');
-assert.match(fs.readFileSync('index.html','utf8'),/ui-familiar\.js\?v=20261011-social-results/,'iPhone recebe o layout atualizado');
+assert.match(fs.readFileSync('index.html','utf8'),/ui-familiar\.js\?v=20261011-social-extended/,'iPhone recebe o layout atualizado');
 // User interface must preserve four general attributes and show only applicable career stats.
 const four=code("window.CaminhosUI.renderStats(game)");
 assert.equal((four.match(/class="retro-stat-row retro-stat-action"/g)||[]).length,4,
@@ -276,7 +276,7 @@ const cssFixed=fs.readFileSync('theme-classic.css','utf8');
 assert.match(cssFixed,/position:sticky;[\s\S]*top:calc\(159px \+ env\(safe-area-inset-top, 0px\)\)/,
  'stats remain visible under iPhone notch during scroll');
 assert.match(cssFixed,/--stats-sticky-size:79px/,'sticky reserved space for core stats');
-assert.match(fs.readFileSync('index.html','utf8'),/game\.js\?v=20261011-social-results/,
+assert.match(fs.readFileSync('index.html','utf8'),/game\.js\?v=20261011-social-extended/,
  'new game logic cache busted');
 
 
@@ -325,8 +325,48 @@ code("relationAction(1,'desculpas')");
 assert.ok(code('game.people[0].irritation')<beforeApology,'apology reduces anger');
 assert.match(code("window.CaminhosUI.renderTab(game,'relacoes')"),/data-ui-person/,'relation cards keep profile interaction access');
 assert.match(fs.readFileSync('ui-familiar.js','utf8'),/socialActions=\[/, 'UI offers social action choices');
-assert.match(fs.readFileSync('ui-familiar.js','utf8'),/😠 Discutir|😒 Provocar/, 'UI offers negative social interactions');
+assert.match(fs.readFileSync('ui-familiar.js','utf8'),/'discutir','😠'|'provocar','😒'/, 'UI offers negative social interactions');
 assert.match(fs.readFileSync('life-extras.js','utf8'),/relationAction\(Number\(relationship.id\),'aproximar'\)/,
  'talking with a schoolmate uses the same relationship interactions');
+
+
+// Expanded relationship interactions from user-provided reference.
+code("startGame('Teste Interacoes','Santos, SP','curioso')");
+code("game.age=27;game.cash=1000;game.people[0].bond=90;game.people[0].irritation=0");
+const moneyBefore=code("game.cash");
+code("relationAction(1,'pedir-dinheiro')");
+const moneyPopup=code("document.getElementById('modalContent').innerHTML");
+assert.match(moneyPopup,/dinheiro|financeira/i,'asking family for money returns outcome');
+const moneyAfterFirst=code("game.cash");
+const bondBeforeSecondRequest=code("game.people[0].bond");
+code("relationAction(1,'pedir-dinheiro')");
+assert.equal(code("game.cash"),moneyAfterFirst,'repeated money requests do not create unlimited income');
+assert.ok(code("game.people[0].bond")<bondBeforeSecondRequest,
+ 'repeated request annoys the family member');
+const cinemaBefore=code("game.cash");
+code("relationAction(1,'cinema')");
+assert.equal(code("game.cash"),cinemaBefore-90,'cinema deducts a real ticket cost');
+assert.match(code("document.getElementById('modalContent').innerHTML"),/cinema|filme/i,
+ 'cinema produces its own popup');
+code("relationAction(1,'acordo')");
+assert.ok(code("game.extra.socialBelongings.length")<=3,
+ 'agreement uses finitely owned personal items');
+assert.match(code("document.getElementById('modalContent').innerHTML"),/acordo|vender|vendeu/i,
+ 'agreement produces a negotiation outcome');
+const beforeInsult=code("game.people[0].bond");
+code("relationAction(1,'insultar')");
+assert.ok(code("game.people[0].bond")<beforeInsult,'insult damages relationship');
+code("relationAction(1,'espiar')");
+assert.match(code("document.getElementById('modalContent').innerHTML"),/espiou|espionado|espionar|notado/i,
+ 'spying creates an uncertain but specific outcome');
+const uiExtended=fs.readFileSync('ui-familiar.js','utf8');
+assert.match(uiExtended,/'pedir-dinheiro'/,'financial request exists for family');
+assert.match(uiExtended,/'cinema'/,'cinema appears as a social action');
+assert.match(uiExtended,/'acordo'/,'item sale is a social action');
+assert.match(uiExtended,/'insultar'/,'insult is available');
+assert.match(uiExtended,/'espiar'/,'spying is available');
+assert.match(uiExtended,/social-option-body/,'social profiles show descriptions like the reference');
+assert.match(fs.readFileSync('index.html','utf8'),/game\.js\?v=20261011-social-extended/,
+ 'updated social actions are uncached on mobile');
 
 console.log('OK: escola, amigos, professores, bens, empresas, venda, salvamento e navegação.');
