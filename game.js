@@ -286,7 +286,7 @@ function showTutorial(){
   '<div class="tutorial-section"><h3>7. Posso entrar com Google ou Apple?</h3><p>Abra ☰ → <strong>Conta e nuvem</strong>. O login Google pode sincronizar automaticamente após a autenticação. O login Apple depende da configuração do provedor. Use sempre o botão 💾 Salvar do cabeçalho para ver o estado do backup.</p></div>'
  );
 }
-async async function restartLife(){
+async function restartLife(){
  if(!game)return;
  const info='Recomeçar vida? Seu personagem atual, histórico e bens desta vida serão apagados. As conquistas da conta permanecerão salvas. Se estiver conectado ao Google, o backup desta vida na nuvem também será excluído. Para guardar uma cópia, exporte a partida antes. Deseja continuar?';
  if(!confirm(info))return;
