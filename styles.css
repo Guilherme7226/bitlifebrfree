@@ -213,3 +213,29 @@
 @media (max-width:700px){
  .desktop-help-links{display:none}
 }
+/* Conquistas: visiveis no desktop e no iPhone */
+.achieve-summary{padding:18px 20px;border:1px solid #6061ac80;background:linear-gradient(115deg,#292750,#202e56);border-radius:16px;margin:16px 0 22px;display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.achieve-summary strong{font-size:25px;color:#fff;line-height:1}
+.achieve-summary span{color:#c8d0eb;font-size:13px}
+.achieve-progress{flex-basis:100%;height:9px;overflow:hidden;border-radius:9px;background:#ffffff22}
+.achieve-progress i{display:block;height:100%;border-radius:9px;background:#5fdc9d}
+.achieve-group{margin-top:20px}.achieve-group h3{color:#cfdafa;display:flex;justify-content:space-between;font-size:16px;align-items:center}
+.achieve-group h3 small{color:#9babcb;font-size:12px}
+.achieve-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.achieve-card{display:flex;gap:12px;align-items:flex-start;border:1px solid #435473;border-radius:14px;background:#1a2943;padding:13px;min-width:0}
+.achieve-earned{border-color:#3e9e83;background:#173a38}
+.achieve-locked{opacity:.67}
+.achieve-icon{font-size:25px;flex:none}.achieve-card strong{display:block;font-size:13px;color:#edf2ff}
+.achieve-card p{font-size:12px;color:#acbbd6;line-height:1.45;margin:5px 0}
+.achieve-card small{font-size:10px;color:#8ee5bc}
+@media(max-width:700px){
+ .achieve-summary{background:#eef3fe;border-color:#c9d9ee;padding:14px;margin:7px 0 18px}
+ .achieve-summary strong{color:#17467f}.achieve-summary span{color:#607c9e}
+ .achieve-progress{background:#d4e0ef}.achieve-group h3{color:#17396b}
+ .achieve-group h3 small{color:#6b7d9a}
+ .achieve-grid{grid-template-columns:1fr;gap:8px}
+ .achieve-card{background:#fff;border-color:#d9e1ee;padding:12px;box-shadow:0 2px 8px #10233b09}
+ .achieve-earned{border-color:#9ddcb9;background:#edfcf4}
+ .achieve-card strong{color:#213d5e}.achieve-card p{color:#65758a}
+ .achieve-card small{color:#1b8353}
+}
