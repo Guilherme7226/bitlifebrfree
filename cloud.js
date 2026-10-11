@@ -289,6 +289,10 @@ async function resetLife(){
    feedback('Não foi possível verificar sua conta. Reset cancelado para proteger o backup: '+line(err));
    return false;
  }
+ if(busy||resetting){
+   feedback('Um salvamento ainda está terminando. Tente novamente.');
+   return false;
+ }
  const signed=canSync(),oldSync=sync,oldState=state;
  resetting=true;resetEpoch++;clearTimeout(timer);sync=false;
  try{
