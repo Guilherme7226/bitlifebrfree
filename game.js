@@ -290,13 +290,13 @@ async function restartLife(){
      return;
    }
  }
- game=null;
- loading=false;
- activeTab='vida';
  try{localStorage.removeItem(SAVE_KEY)}catch{
    showToast('Não foi possível apagar a partida local. Verifique o armazenamento do navegador.');
    return;
  }
+ game=null;
+ loading=false;
+ activeTab='vida';
  hideModal();render();window.scrollTo({top:0,behavior:'smooth'});
  showToast('Nova vida liberada! Crie um novo personagem.');
 }
