@@ -29,15 +29,17 @@ const ctx=vm.createContext({
  document,localStorage:storage,navigator:{},location:{origin:'https://example.com',pathname:'/'},
  console,setTimeout(){return 1},clearTimeout(){},
  Date,Math,JSON,Intl,URL,Blob,AbortController,
- confirm(){return true}
+ confirm(){return true},prompt(){return 'Pipoca'}
 });
-for(const file of ['achievements.js','life-extras.js','game.js']){
+for(const file of ['achievements.js','life-extras.js','career-paths.js','sim-world.js','game.js']){
   vm.runInContext(fs.readFileSync(file,'utf8'),ctx,{filename:file});
 }
 function code(src){return vm.runInContext(src,ctx)}
 function click(dataset){
  const target={dataset,closest(selector){
    if(selector==='[data-life-extra]'&&dataset.lifeExtra)return this;
+   if(selector==='[data-path-act]'&&dataset.pathAct)return this;
+   if(selector==='[data-world-action]'&&dataset.worldAction)return this;
    return null;
  }};
  for(const listener of (listeners.click||[]))listener({target});
@@ -82,4 +84,68 @@ assert.match(html,/id="homeShortcut"/);
 assert.match(html,/data-tab="escola"/);
 const css=fs.readFileSync('styles.css','utf8');
 assert.match(css,/grid-template-columns:\.9fr \.9fr 1\.1fr \.9fr \.9fr \.8fr/);
+
+assert.match(code("window.CaminhosWorld.portrait('Helena','Professora',11)"),/<svg/,'NPCs possuem modelo 2D');
+assert.notEqual(code("window.CaminhosWorld.portrait('Helena','Professora',11)"),code("window.CaminhosWorld.portrait('Daniel','Aluno',12)"),'retratos sao individuais');
+assert.match(code('window.CaminhosExtras.renderSchool(game)'),/ensino médio|escolar/i,'ensino medio e formatura apresentados');
+assert.equal(code("window.CaminhosPaths.offerGraduation(game)"),true,'convite apos ensino medio');
+click({pathAct:'choose',choice:'faculdade'});
+assert.equal(code("game.extra.lifeRoute.choice"),'faculdade','escolha faculdade apos formatura');
+assert.match(code("renderCareer()"),/Concursos e Forças Armadas/,'exibe area de concursos');
+code("game.cash=3000000;game.age=22;game.actions=3;game.stats.saude=100;game.stats.disciplina=100;game.stats.inteligencia=100;game.pendingEvent=null;render()");
+click({pathAct:'enroll',id:'militar_exercito',track:'praca'});
+assert.equal(code("game.extra.publicService.training.id"),'militar_exercito','matricula militar');
+code("game.age=23;window.CaminhosPaths.onAnnual(game)");
+assert.equal(code('game.job'),'militar_exercito','formatura inicia a carreira militar');
+assert.match(code("window.CaminhosPaths.rankName(game)"),/Soldado|Cabo/,'patente militar');
+assert.ok(code("window.CaminhosPaths.salary(game)")>0,'remuneracao militar');
+code('game.actions=3');
+click({pathAct:'practice'});
+assert.ok(code('game.extra.publicService.active.merit')>=50,'treino desenvolve merito');
+code("game.actions=3;game.age=25;game.cash=40000");
+click({pathAct:'martial-train',id:'jiujitsu'});
+assert.ok(code("game.extra.martialArts.jiujitsu.trainings")>=1,'judo e jiu jitsu treinaveis');
+assert.match(code('window.CaminhosPaths.renderMartial(game)'),/Jiu-jítsu/);
+code('game.actions=3;game.cash=3000000');
+click({worldAction:'pet-add',id:'cachorro',choice:'adopt'});
+assert.equal(code('game.extra.pets.length'),1,'pet foi adotado');
+assert.equal(code('game.extra.pets[0].name'),'Pipoca','pets nomeados');
+code('game.actions=3');
+click({worldAction:'pet-care',id:1,choice:'feed'});
+assert.ok(code('game.extra.pets[0].hunger')>=75,'alimentacao do pet');
+assert.match(code('window.CaminhosWorld.renderPets(game)'),/Pipoca/);
+code("window.CaminhosPaths.leave(game);game.job=null;game.age=38;game.actions=3;game.stats.carisma=100;game.cash=10000000;game.extra.reputation=95;game.extra.politics2.loyalty=85;Math.random=()=>0");
+assert.match(code('window.CaminhosWorld.renderPolitics(game)'),/Presidente da República/);
+click({worldAction:'election',id:'prefeito'});
+assert.equal(code('game.extra.office'),null,'nao pode ser prefeito sem vereanca');
+click({worldAction:'election',id:'vereador'});
+assert.equal(code('game.extra.office'),'vereador','vereador eleito');
+code('game.extra.office=null;game.actions=3');
+click({worldAction:'election',id:'prefeito'});
+assert.equal(code('game.extra.office'),'prefeito','prefeito eleito depois de vereador');
+code('game.extra.office=null;game.actions=3');
+click({worldAction:'election',id:'governador'});
+assert.equal(code('game.extra.office'),'governador','governador eleito depois de prefeito');
+code('game.extra.office=null;game.actions=3');
+click({worldAction:'election',id:'presidente'});
+assert.equal(code('game.extra.office'),'presidente','presidente eleito depois de governador');
+code('game.actions=3;game.extra.politics2.integrity=70');
+click({worldAction:'honest'});
+assert.ok(code('game.extra.politics2.integrity')>=82,'gestao honesta melhora integridade');
+code('game.actions=3');
+click({worldAction:'corrupt'});
+assert.ok(code('game.extra.prison')>=1,'corrupcao pode causar prisao');
+assert.equal(code('game.extra.office'),null,'condenacao termina mandato');
+assert.equal(code('game.job'),null,'condenacao suspende trabalho');
+code('game.extra.prison=0;game.actions=3;game.age=40');
+click({worldAction:'crime',id:'trafico'});
+assert.ok(code('game.extra.record')>=1,'crime registra antecedentes');
+assert.ok(code('game.extra.prison')>=1,'trafico ficticio pode levar a prisao');
+const beforePrison=code('game.extra.prison');
+code('game.age=41;window.CaminhosWorld.annual(game)');
+assert.equal(code('game.extra.prison'),beforePrison-1,'desconta um ano de pena');
+assert.match(code("window.CaminhosWorld.renderCrime(game)"),/Ficha judicial/);
+assert.match(fs.readFileSync('index.html','utf8'),/data-tab="pets"/);
+assert.match(fs.readFileSync('index.html','utf8'),/career-paths.js/);
+assert.match(fs.readFileSync('index.html','utf8'),/sim-world.js/);
 console.log('OK: escola, amigos, professores, bens, empresas, venda, salvamento e navegação.');
