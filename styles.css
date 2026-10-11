@@ -286,3 +286,68 @@
  .topbar .icon-button{width:32px}
  .topbar .nav-toggle{width:32px}
 }
+/* CAMINHOS 3.0 — botao de voltar ao diario e acesso facil a todas as secoes */
+@media(min-width:701px){
+ .profile-home{display:inline-flex;align-items:center;gap:6px;color:#bbcbf2;background:#233c63;border:1px solid #3f5780;border-radius:9px;padding:7px 12px;font-size:12px;font-weight:800;margin-bottom:3px}
+ .profile-home:hover{background:#304f81}
+}
+@media(max-width:700px){
+ .mobile-dock{grid-template-columns:.9fr .9fr 1.1fr .9fr .9fr .8fr}
+ .mobile-dock button{font-size:9px;gap:4px}
+ .mobile-dock [data-dock="more"] span{font-size:27px;font-weight:900;line-height:23px}
+ .profile-home{display:inline-flex;align-items:center;gap:4px;padding:4px 7px;background:#e9f1fc;border:1px solid #cfddec;color:#205386;border-radius:7px;font-size:10px}
+ .profile-home span{display:inline!important}
+ .profile-heading h1{margin-top:3px}
+ .asset-grid{grid-template-columns:1fr!important}
+}
+.asset-wealth{font-size:25px;font-weight:900;color:#bba9ff;margin:6px 0}
+.assets-intro{padding:16px;background:#182c45;border:1px solid #425574;border-radius:16px;margin-bottom:15px}
+.assets-intro h3{font-size:17px;margin:0}
+.assets-intro p{color:#afbed6;font-size:12px;margin:7px 0 12px}
+.asset-counters{display:flex;gap:7px;flex-wrap:wrap}
+.asset-counters span{font-size:11px;border:1px solid #455776;color:#d9e4f7;border-radius:20px;padding:5px 10px}
+.asset-filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:15px}
+.asset-filters button{background:#1c2c45;color:#c1d0e5;border:1px solid #415778;border-radius:17px;padding:9px 12px;font-size:11px;min-height:38px;cursor:pointer}
+.asset-filters button.active{background:#4364a4;color:#fff;border-color:#7591d1;font-weight:800}
+.asset-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.asset-tile{background:#16243b;border:1px solid #425270;border-radius:14px;padding:14px;min-width:0}
+.asset-tile.owned{background:#18352f;border-color:#458773}
+.asset-tile-head{display:flex;align-items:flex-start;gap:11px}
+.asset-tile-head>span{font-size:26px}
+.asset-tile-head strong{font-size:13px;display:block;color:#eaf2ff}
+.asset-tile-head small{font-size:10px;color:#a5bbd4;display:block;margin-top:4px}
+.asset-tile p{font-size:12px;line-height:1.6;color:#b8c7da}
+.asset-tile button{width:100%;min-height:41px;font-size:12px}
+.asset-actions{display:flex;gap:8px}.asset-actions button{flex:1}
+.school-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:7px}
+.school-top span{font-weight:800}.school-top strong{font-size:11px;color:#9ebaff}
+.school-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.school-metrics>div{border:1px solid #415578;border-radius:11px;padding:12px;text-align:center}
+.school-metrics small{font-size:10px;color:#aebbd4;display:block}
+.school-metrics strong{font-size:19px;color:#eef5ff;display:block;margin-top:4px}
+.school-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:16px}
+.school-actions button{padding:12px 9px;font-size:12px;min-height:51px;text-align:left}
+.school-list{display:grid;gap:9px;margin:10px 0 18px}
+.school-person{background:#16243b;border:1px solid #3e506d;border-radius:13px;padding:12px;display:flex;align-items:center;gap:11px;min-width:0}
+.school-icon{font-size:26px;flex:none}
+.school-person>div:nth-child(2){flex:1;min-width:0}
+.school-person strong{display:block;font-size:13px;color:#e8f0ff}
+.school-person small{display:block;font-size:11px;color:#aabbd4;margin-top:4px}
+.school-person button{font-size:11px;padding:9px;min-height:40px}
+@media(max-width:700px){
+ .assets-intro,.asset-tile,.school-person{background:#fff;border-color:#d8e3f0}
+ .assets-intro h3,.asset-tile-head strong,.school-person strong{color:#203d62}
+ .asset-wealth{color:#226e52}
+ .assets-intro p,.asset-tile p,.asset-tile-head small,.school-person small{color:#64748b}
+ .asset-counters span{color:#436184;border-color:#d5dfee}
+ .asset-filters button{background:#e8f0fa;border-color:#cadbf0;color:#315779}
+ .asset-filters button.active{background:#234e86;color:#fff}
+ .asset-tile.owned{background:#edf9f2;border-color:#a7dfb8}
+ .school-top strong{color:#3c659a}
+ .school-metrics>div{border-color:#dae6f4;background:#f0f5fb}
+ .school-metrics small{color:#6c7f96}
+ .school-metrics strong{color:#1e4e82}
+ .school-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .school-actions button{background:#e8f1fe;border-color:#d1dfed;color:#204e7c}
+ .school-person button{max-width:103px}
+}
