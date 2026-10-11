@@ -58,7 +58,7 @@ function onAnnual(g){
   p.age=Math.max(0,d.year-p.birthYear);
   if(p.id===d.activeId){p.age=g.age;p.birthYear=d.year-g.age;continue}
   if(!p.alive)continue;
-  if(p.age>=78&&Math.random()<Math.min(.85,(p.age-76)*.018))p.alive=false;
+  if(p.age>=78&&Math.random()<Math.min(.85,(p.age-76)*.018)){distributeMemberEstate(g,p,false);}
  }
  // Familiares adultos formam suas proprias familias: netos, bisnetos etc.
  const newborn=[];
@@ -73,9 +73,100 @@ function onAnnual(g){
  }
  d.members.push(...newborn);
 }
+// Cada personagem mantem seu proprio patrimonio. Um neto nao recebe bens do
+// avo diretamente enquanto o pai/mae daquela linha estiver vivo.
+function emptyEstate(){return {cash:0,savings:0,properties:0,assets:[],debt:0}}
+function estateOf(member){
+ if(!member.estate||typeof member.estate!=='object')member.estate=emptyEstate();
+ if(!Array.isArray(member.estate.assets))member.estate.assets=[];
+ return member.estate;
+}
+function cloneAsset(a){return {...a}}
+function grossEstate(e){
+ const approx=e.assets.reduce((sum,a)=>sum+Math.max(0,Number(a.basisValue)||0)*(Number.isFinite(a.share)?a.share:1),0);
+ return Math.max(0,e.cash)+Math.max(0,e.savings)+Math.max(0,e.properties)*75000+approx;
+}
+function snapshot(g){
+ const assets=(g.extra?.assetInventory||[]).map(a=>{
+  const current=window.CaminhosExtras?.worth?.(a,g);
+  const fraction=Number.isFinite(a.share)?a.share:1;
+  return {...a,basisValue:fraction>0?Math.round((current||0)/fraction):0};
+ });
+ const cash=Math.max(0,Number(g.cash)||0);
+ const savings=Math.max(0,Number(g.savings)||0);
+ const properties=Math.max(0,Number(g.properties)||0);
+ const debt=Math.max(0,(Number(g.extra?.everyday?.debt)||0)+Math.max(0,-(Number(g.cash)||0)));
+ return {cash,savings,properties,assets,debt:Math.min(debt,cash+savings+properties*75000+assets.reduce((sum,a)=>sum+Math.max(0,Number(a.basisValue)||0)*(Number(a.share)||1),0))};
+}
+function heirsForBranch(d,member){
+ const children=(member.children||[]).map(id=>find(d,id)).filter(Boolean);
+ return children.filter(c=>c.alive||heirsForBranch(d,c).length>0);
+}
+function allocatePart(e,ratio){
+ return {cash:e.cash*ratio,savings:e.savings*ratio,properties:e.properties*ratio,
+   debt:e.debt*ratio,assets:e.assets.map(a=>({...a,share:(Number.isFinite(a.share)?a.share:1)*ratio}))};
+}
+function addToEstate(target,portion){
+ target.cash+=portion.cash;target.savings+=portion.savings;target.properties+=portion.properties;
+ target.debt+=portion.debt;target.assets.push(...portion.assets.map(cloneAsset));
+}
+function applyToPlayer(g,portion){
+ g.cash+=portion.cash;g.savings+=portion.savings;g.properties+=portion.properties;
+ if(!g.extra.assetInventory)g.extra.assetInventory=[];
+ if(!Number.isInteger(g.extra.assetSequence))g.extra.assetSequence=1;
+ for(const asset of portion.assets){
+  g.extra.assetInventory.push({...cloneAsset(asset),id:g.extra.assetSequence++,age:g.age});
+ }
+ if(!g.extra.everyday)g.extra.everyday={};
+ g.extra.everyday.debt=(g.extra.everyday.debt||0)+portion.debt;
+}
+function allocateBranch(d,person,portion,g,ledger,depth=0){
+ if(depth>25)return;
+ if(person.alive){
+  if(person.id===d.activeId&&g.alive){applyToPlayer(g,portion)}
+  else addToEstate(estateOf(person),portion);
+  ledger.push({id:person.id,name:person.name,amount:portion.cash+portion.savings+portion.properties*75000,
+   debt:portion.debt,assets:portion.assets.length});
+  return;
+ }
+ const branches=heirsForBranch(d,person);
+ if(!branches.length)return;
+ for(const branch of branches)allocateBranch(d,branch,allocatePart(portion,1/branches.length),g,ledger,depth+1);
+}
+function distributeMemberEstate(g,member,sourceActive){
+ if(member.estateDistributed)return member.inheritanceSummary||null;
+ const d=ensure(g);
+ // Fotografia dos bens no instante da morte; as propriedades de parentes
+ // nao sao misturadas com a conta bancária do personagem jogavel.
+ const e=sourceActive?snapshot(g):estateOf(member);
+ member.alive=false;
+ member.estateDistributed=true;
+ const heirs=heirsForBranch(d,member);
+ const ledger=[];
+ if(heirs.length){
+  for(const heir of heirs)allocateBranch(d,heir,allocatePart(e,1/heirs.length),g,ledger);
+ }
+ member.inheritanceSummary={from:member.name,heirs:ledger,branches:heirs.length,
+   gross:grossEstate(e),debt:e.debt,unclaimed:heirs.length===0};
+ member.estate=emptyEstate();
+ if(sourceActive){
+  d.lastInheritance=member.inheritanceSummary;
+ }else if(ledger.some(x=>x.id===d.activeId)){
+  const amount=ledger.filter(x=>x.id===d.activeId).reduce((s,x)=>s+x.amount,0);
+  noteAnnual('Herança familiar',member.name+' faleceu e você recebeu sua parte da herança: '+brl(amount)+'.');
+ }
+ return member.inheritanceSummary;
+}
+function inheritanceFor(g,id){
+ const d=ensure(g),p=find(d,id);
+ if(!p)return null;
+ // Esta carteira pertence exclusivamente ao personagem. Se o pai estiver
+ // vivo, o neto nao recebe a parte pertencente a ele.
+ return estateOf(p);
+}
 function recordDeath(g){
  const d=ensure(g),p=find(d,d.activeId);
- if(p){p.alive=false;p.age=g.age;}
+ if(p){p.age=g.age;distributeMemberEstate(g,p,true)}
  if(!d.pastLives.some(x=>x.id===d.activeId)){
   d.pastLives.push({id:d.activeId,name:g.name,age:g.age,generation:p?.generation||1,job:g.job,deathYear:d.year});
  }
@@ -113,23 +204,32 @@ function render(g){
 function chooseHeir(g,id){
  if(!g||g.alive)return false;
  recordDeath(g);
- const d=ensure(g),heir=candidates(g).find(p=>p.id===Number(id));if(!heir)return false;
- const old={name:g.name,age:g.age,cash:g.cash,savings:g.savings,properties:g.properties};
- const keepAssets=(g.extra.assetInventory||[]).map(x=>({...x}));
- const keepPets=(g.extra.pets||[]).filter(p=>p.health>20).map(x=>({...x}));
+ const d=ensure(g),heir=candidates(g).find(p=>p.id===Number(id));
+ if(!heir)return false;
+ const old={name:g.name,age:g.age};
+ // Somente bens pertencentes ao herdeiro; nada de herdar o avo novamente
+ // nem receber antecipadamente o patrimonio de um pai vivo.
+ const estate=inheritanceFor(g,heir.id);
+ const inherited={cash:estate.cash,savings:estate.savings,properties:estate.properties,
+   debt:estate.debt,assets:estate.assets.map(cloneAsset)};
+ heir.estate=emptyEstate();
  d.activeId=heir.id;d.transitions++;
  g.name=heir.name;g.age=heir.age;g.alive=true;g.actions=3;g.job=null;g.jobYears=0;
  g.university=null;g.degree=[];g.partnerId=null;g.children=(heir.children||[]).length;
- g.cash=Math.max(0,Math.round(old.cash*.8));g.savings=Math.max(0,Math.round(old.savings*.8));g.properties=old.properties;
+ g.cash=inherited.cash;g.savings=inherited.savings;g.properties=inherited.properties;
  g.stats={saude:rnd(65,85),felicidade:rnd(50,78),inteligencia:rnd(43,75),carisma:rnd(35,70),disciplina:rnd(40,75)};
  g.people=d.members.filter(p=>p.id!==heir.id&&p.alive&&(p.parentId===heir.id||p.id===heir.parentId||p.parentId===heir.parentId)).slice(0,35)
  .map((p,i)=>({id:i+1,name:p.name,role:p.parentId===heir.id?'Filho(a)':p.id===heir.parentId?'Pai/Mãe':'Parente',emoji:'👨‍👩‍👧',bond:rnd(45,85)}));
- g.extra=extraData({});g.extra.dynasty=d;g.extra.assetInventory=keepAssets;g.extra.pets=keepPets;
- g.extra.assetSequence=keepAssets.reduce((m,x)=>Math.max(m,x.id+1),1);
- g.history=[{age:g.age,title:'O legado continua',description:'Depois da morte de '+old.name+' aos '+old.age+' anos, você assumiu a vida de '+heir.name+', geração '+heir.generation+' da família.'}];
+ g.extra=extraData({});g.extra.dynasty=d;
+ g.extra.assetInventory=inherited.assets.map((a,i)=>({...a,id:i+1,age:g.age}));
+ g.extra.assetSequence=inherited.assets.length+1;
+ if(!g.extra.everyday)g.extra.everyday={};
+ g.extra.everyday.debt=inherited.debt;
+ const inheritValue=Math.max(0,inherited.cash+inherited.savings+inherited.properties*75000+
+ inherited.assets.reduce((sum,a)=>sum+(a.basisValue||0)*(a.share??1),0)-inherited.debt);
+ g.history=[{age:g.age,title:'O legado continua',description:'Depois da morte de '+old.name+' aos '+old.age+' anos, você assumiu '+heir.name+', geração '+heir.generation+'. Patrimônio pessoal herdado: '+brl(inheritValue)+'. O patrimônio de parentes vivos continua com eles.'}];
  g.lastEvent=g.history[0].description;g.pendingEvent=null;g.lastAIYear=-1;
- // Children remain visible; school and other game systems are rebuilt by save().
  return true;
 }
-window.CaminhosDynasty={ensure,birth,onAnnual,recordDeath,candidates,render,chooseHeir,relationship};
+window.CaminhosDynasty={ensure,birth,onAnnual,recordDeath,candidates,render,chooseHeir,relationship,inheritanceFor,distributeMemberEstate};
 })();
