@@ -113,22 +113,29 @@ function renderDiary(g){
   '<div class="retro-diary-list">'+(html||'<p class="retro-diary-line">Seu novo capítulo está começando.</p>')+'</div>'+
   '<div class="retro-diary-actions"><button type="button" class="secondary-button" data-go="historia">Ver minha história completa</button></div></section>';
 }
-function statRow(label,icon,value){
+function statRow(label,icon,value,key){
  const v=Math.max(0,Math.min(100,Math.round(Number(value)||0)));
- const bad=v<30,good=v>=30;
- return '<div class="retro-stat-row"><span class="retro-stat-name">'+label+' <span>'+icon+'</span></span>'+
- '<div class="retro-stat-meter"><span class="'+(bad?'retro-low':'retro-high')+'" style="width:'+v+'%"></span></div>'+
- '<span class="retro-stat-value">'+v+'%</span></div>';
+ const bad=v<30;
+ return '<button type="button" class="retro-stat-row retro-stat-action" data-act="attribute-boost" data-stat="'+key+'" aria-label="Ver oportunidades para melhorar '+label+'">'+
+ '<span class="retro-stat-name">'+label+' <span>'+icon+'</span></span>'+
+ '<span class="retro-stat-meter"><span class="'+(bad?'retro-low':'retro-high')+'" style="width:'+v+'%"></span></span>'+
+ '<span class="retro-stat-value">'+v+'%</span></button>';
+}
+function professionalStat(g){
+ if(g.extra?.office||g.job==='politico')return {label:'Popularidade',icon:'🗳️',value:g.extra?.reputation??30,key:'popularidade'};
+ if(['ator','diretor','musico','influencer','atleta','lutador'].includes(g.job))
+   return {label:'Fama',icon:'⭐',value:g.extra?.fame??0,key:'fama'};
+ return null;
 }
 function renderStats(g){
  ensure(g);
- return '<div class="retro-stats">'+
- statRow('Felicidade','🙂',g.stats.felicidade)+
- statRow('Saúde','❤️',g.stats.saude)+
- statRow('Inteligência','🧠',g.stats.inteligencia)+
- statRow('Aparência','✨',g.extra.appearance)+
- statRow('Carisma','💬',g.stats.carisma)+
- statRow('Disciplina','⚡',g.stats.disciplina)+'</div>';
+ const personal=statRow('Felicidade','🙂',g.stats.felicidade,'felicidade')+
+ statRow('Saúde','❤️',g.stats.saude,'saude')+
+ statRow('Inteligência','🧠',g.stats.inteligencia,'inteligencia')+
+ statRow('Aparência','✨',g.extra.appearance,'aparencia');
+ const job=professionalStat(g);
+ return '<div class="retro-stats">'+personal+
+ (job?statRow(job.label,job.icon,job.value,job.key):'')+'</div>';
 }
 function renderTab(g,tab){
  ensure(g);
