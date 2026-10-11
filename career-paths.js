@@ -65,6 +65,7 @@ function enrollment(g,id,route){
  const reason=entryReason(g,id,route);if(reason)return showToast(reason);
  if(g.actions<1)return showToast('Avance um ano para ter novas ações.');
  if(g.pendingEvent)return showEvent();
+ if(g.extra?.prison>0)return showToast('Formação indisponível na prisão.');
  if(currentService(g)?.id===id)return showToast('Você já trabalha nesta corporação.');
  if(!confirm('Iniciar formação em '+p.name+' como '+(route==='oficial'?'oficial':'praça/agente')+'? Leva um ano no simulador.'))return;
  g.actions--;
@@ -142,6 +143,7 @@ function serviceAction(g,id){
  if(!s&&!t)return showToast('Entre em uma formação ou carreira primeiro.');
  if(g.actions<1)return showToast('Não há ações disponíveis neste ano.');
  if(g.pendingEvent)return showEvent();
+ if(g.extra?.prison>0)return showToast('Serviço indisponível na prisão.');
  if(id==='mission'&&!s)return showToast('Conclua a formação antes de atuar.');
  g.actions--;
  if(id==='practice'){
@@ -253,6 +255,7 @@ function martialAction(g,id,act){
  if(!g.alive||g.age<art.minAge)return showToast('Esta modalidade ainda não está disponível.');
  if(!g.actions)return showToast('Você não tem mais ações neste ano.');
  if(g.pendingEvent)return showEvent();
+ if(g.extra?.prison>0)return showToast('Não pode treinar ou competir durante a prisão.');
  const price=g.age>=16?(act==='compete'?250:art.cost):0;
  if(g.cash<price)return showToast('Saldo insuficiente para esta atividade.');
  const r=martialState(g,id),before=levelName(art,r.skill);
@@ -272,6 +275,8 @@ function martialAction(g,id,act){
  }
  save();render();
 }
+function offerGraduation(g){ensure(g);return g.age===18&&g.extra.school?.finished&&!g.extra.lifeRoute.choice}
+function leave(g,newId=null){ensure(g);const ps=g.extra.publicService;if(ps.active&&(newId===null||newId!==ps.active.id)){ps.last={...ps.active,endedAt:g.age};ps.active=null}}
 function resetFuture(g){ensure(g);return g.extra.lifeRoute.choice}
 document.addEventListener('click',ev=>{
  const button=ev.target.closest('[data-path-act]');
@@ -285,5 +290,5 @@ document.addEventListener('click',ev=>{
  if(action==='martial-compete')martialAction(game,button.dataset.id,'compete');
 });
 window.CaminhosPaths={ensure,onAnnual,entryReason,jobReason,salary,rankName,serviceBadge,renderServices,
- futureChoice,openGraduation,renderMartial,martialAction,resetFuture,services:SERVICES};
+ futureChoice,openGraduation,offerGraduation,leave,renderMartial,martialAction,resetFuture,services:SERVICES};
 })();
