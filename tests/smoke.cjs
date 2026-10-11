@@ -31,7 +31,7 @@ const ctx=vm.createContext({
  Date,Math,JSON,Intl,URL,Blob,AbortController,
  confirm(){return true},prompt(){return 'Pipoca'}
 });
-for(const file of ['achievements.js','life-extras.js','career-paths.js','sim-world.js','game.js']){
+for(const file of ['achievements.js','life-extras.js','career-paths.js','sim-world.js','ui-familiar.js','game.js']){
   vm.runInContext(fs.readFileSync(file,'utf8'),ctx,{filename:file});
 }
 function code(src){return vm.runInContext(src,ctx)}
@@ -149,4 +149,14 @@ assert.match(code("window.CaminhosWorld.renderCrime(game)"),/Ficha judicial/);
 assert.match(fs.readFileSync('index.html','utf8'),/data-tab="pets"/);
 assert.match(fs.readFileSync('index.html','utf8'),/career-paths.js/);
 assert.match(fs.readFileSync('index.html','utf8'),/sim-world.js/);
+assert.match(code("window.CaminhosUI.renderTab(game,'atividades')"),/ANIMAIS|Animais de estimação/i,'menu de atividades classico');
+assert.match(code("window.CaminhosUI.renderTab(game,'financas')"),/Investimentos/,'menu de bens classico');
+assert.match(code("window.CaminhosUI.renderTab(game,'carreira')"),/PROFISSÃO|Profissão/,'menu da carreira classico');
+assert.match(code("window.CaminhosUI.renderTab(game,'relacoes')"),/Família|Amigos e afetos/,'menu de relacoes com nome');
+assert.match(code("window.CaminhosUI.renderTab(game,'vida')"),/Idade:/,'diario em texto com idade');
+assert.match(code("window.CaminhosUI.renderStats(game)"),/Aparência/,'barras de aparencia e saude');
+assert.match(fs.readFileSync('index.html','utf8'),/theme-classic.css/,'tema classico incluido');
+assert.match(fs.readFileSync('index.html','utf8'),/ui-familiar.js/,'menus classicos incluidos');
+assert.match(fs.readFileSync('theme-classic.css','utf8'),/background:#23a642/,'idade em verde');
+assert.match(fs.readFileSync('theme-classic.css','utf8'),/retro-screen-bar/,'cabecalho das telas');
 console.log('OK: escola, amigos, professores, bens, empresas, venda, salvamento e navegação.');
