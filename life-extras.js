@@ -55,6 +55,11 @@ function ensure(g){
    e.school={name:'Escola Municipal de '+String(g.city||'sua cidade').split(',')[0],
      average:rand(55,74),discipline:rand(58,82),projects:0,awards:0,events:0,finished:false,yearProcessed:-1};
  }
+ // Versoes antigas chamavam todos os ex-colegas de "Amizade".
+ // Preserve amizades antigas; personagens novos precisam de convite aceito.
+ for(const person of g.people){
+  if(person.role==='Amizade'&&typeof person.friend!=='boolean')person.friend=true;
+ }
  if(g.age>=4&&g.age<18&&!e.school.finished && !g.people.some(p=>p.role==='Colega'||p.role==='Professor(a)')){
    const used=new Set(g.people.map(p=>p.name));
    const pool=['Marina','Eduarda','João','Caio','Júlia','Thiago','Bianca','Isabela','Felipe','Rafaela','Lucas','André','Luísa','Renan','Sofia','Pedro'];
@@ -65,7 +70,7 @@ function ensure(g){
      if(!name)name='Pessoa '+(names.length+1);
      names.push(name);used.add(name);
      const id=Math.max(0,...g.people.map(p=>Number(p.id)||0))+1;
-     g.people.push({id,name,role,emoji:role==='Colega'?'🧑‍🎓':'👩‍🏫',bond:rand(37,71)});
+     g.people.push({id,name,role,emoji:role==='Colega'?'🧑‍🎓':'👩‍🏫',bond:rand(37,71),friend:false,schoolmate:true});
    }
  }
 }
@@ -116,9 +121,40 @@ function annual(g){
  }
  if(g.age>=18&&!s.finished){
    s.finished=true;
-   g.people.forEach(p=>{if(p.role==='Colega')p.role='Amizade';else if(p.role==='Professor(a)')p.role='Ex-professor(a)'});
-   noteAnnual('Fim da escola','Você concluiu a escola com média '+s.average+'/100 e '+s.awards+' destaque(s). Seus colegas continuam como amigos.');
+   g.people.forEach(p=>{if(p.role==='Colega')p.role='Ex-colega';else if(p.role==='Professor(a)')p.role='Ex-professor(a)'});
+   noteAnnual('Fim da escola','Você concluiu a escola com média '+s.average+'/100 e '+s.awards+' destaque(s). Os contatos continuam conhecidos; apenas amizades aceitas aparecem em Relacionamentos.');
  }
+}
+// Convites aleatorios de amizade de colegas conhecidos com bom vinculo.
+function friendshipInvite(g){
+ ensure(g);
+ if(!g?.alive||g.age<4||g.extra?.prison>0)return null;
+ const e=g.extra;
+ if(e.friendshipInvitationYear===g.age)return null;
+ e.friendshipInvitationYear=g.age;
+ const possible=g.people.filter(p=>!p.friend&&['Colega','Ex-colega','Conhecido'].includes(p.role)&&
+  Number(p.bond)>=65&&(Number(p.irritation)||0)<30&&p.friendRequestYear!==g.age);
+ if(!possible.length||Math.random()>=.26)return null;
+ const person=choose(possible);
+ return {source:'friendship',personId:Number(person.id),title:person.name+' quer sua amizade',
+  story:person.name+' gosta de passar tempo com você e perguntou se vocês podem ser amigos. Você deseja aceitar?',
+  choices:[
+   {text:'Aceitar a amizade',delta:{felicidade:5},accept:true},
+   {text:'Recusar educadamente',delta:{felicidade:-1},accept:false}
+  ]};
+}
+function friendshipDecision(g,id,accept){
+ const person=g?.people?.find(p=>Number(p.id)===Number(id));
+ if(!person)return false;
+ person.friendRequestYear=g.age;
+ if(accept){
+  person.friend=true;
+  person.friendSince=g.age;
+  person.bond=clamp(person.bond+6);
+ }else{
+  person.bond=clamp(person.bond-3);
+ }
+ return true;
 }
 function wealth(g){
  ensure(g);
@@ -140,14 +176,17 @@ function worth(a,g){
  return Math.round(full*share);
 }
 function renderSchool(g){
- ensure(g);const s=g.extra.school, schoolPeople=g.people.filter(p=>['Colega','Amizade','Professor(a)','Ex-professor(a)'].includes(p.role));
+ ensure(g);const s=g.extra.school, schoolPeople=g.people.filter(p=>['Colega','Ex-colega','Professor(a)','Ex-professor(a)'].includes(p.role)||(p.schoolmate===true&&p.role==='Amizade'));
  if(g.age<4)return displayTitle('Minha escola','Sua jornada escolar começará aos 4 anos.')+
  '<div class="card"><h3>🧸 Os primeiros anos</h3><p>Você ainda está em casa com sua família. Avance até os 4 anos para conhecer colegas e professores.</p></div>';
  const current=g.age<=17&&!s.finished;
  const teachers=schoolPeople.filter(p=>p.role.toLowerCase().includes('professor'));
- const mates=schoolPeople.filter(p=>p.role==='Colega'||p.role==='Amizade').slice(0,8);
- const personCard=p=>'<div class="school-person"><div class="school-icon portrait-holder">'+(window.CaminhosWorld?.portrait(p.name,p.role,p.id)||clean(p.emoji))+'</div><div><strong>'+clean(p.name)+'</strong><small>'+clean(p.role)+' · Vínculo '+Math.round(p.bond)+'/100</small></div>'+
- (current?'<button type="button" class="secondary-button" data-life-extra="talk" data-person="'+Number(p.id)+'" '+(!g.alive?'disabled':'')+'>Conversar</button>':'')+'</div>';
+ const mates=schoolPeople.filter(p=>p.role==='Colega'||p.role==='Ex-colega'||p.schoolmate===true&&p.role==='Amizade').slice(0,8);
+ const personCard=p=>'<div class="school-person">'+
+ '<div class="school-icon portrait-holder">'+(window.CaminhosWorld?.portrait(p.name,p.role,p.id)||clean(p.emoji))+'</div>'+
+ '<div><strong>'+clean(p.name)+'</strong><small>'+clean(p.role)+' · Vínculo '+Math.round(p.bond)+'/100'+
+ (p.friend===true?' · 💚 Amigo(a)':' · Conhecido(a)')+'</small></div>'+
+ '<button type="button" class="secondary-button" data-ui-person="'+Number(p.id)+'" '+(!g.alive?'disabled':'')+'>Interagir →</button></div>';
  let out=displayTitle('🏫 Minha escola',current?'Colegas, professores, aprendizado e acontecimentos ao longo do ano.':'Recordações da sua vida escolar.');
  if(!current&&g.age>=18)out+=window.CaminhosPaths?.futureChoice(g)||'';
  out+='<div class="card"><div class="school-top"><span>📚 '+clean(s.name)+'</span><strong>'+lifeStageSchool(g)+'</strong></div><div class="school-metrics">'+
@@ -163,7 +202,7 @@ function renderSchool(g){
  }
  out+='<div class="section-title">Meus colegas <small>'+mates.length+'</small></div><div class="school-list">'+mates.map(personCard).join('')+'</div>';
  out+='<div class="section-title">Professores <small>'+teachers.length+'</small></div><div class="school-list">'+teachers.map(personCard).join('')+'</div>';
- out+='<div class="notice">As interações com colegas e professores também aparecem na aba Relações. Os personagens e notas são fictícios e pertencem a esta partida.</div>';
+ out+='<div class="notice">Interaja com colegas e professores aqui na Escola. Somente amizades aceitas aparecerão em Relacionamentos. Os personagens são fictícios.</div>';
  return out;
 }
 function schoolAction(g,id,personId){
@@ -294,5 +333,5 @@ document.addEventListener('click',event=>{
  if(action==='school'||action==='talk'){schoolAction(game,action==='talk'?'talk':btn.dataset.id,btn.dataset.person);return}
  if(['buy','sell','upgrade'].includes(action))assetsAction(game,action,btn.dataset.id,btn.dataset.inventory);
 });
-window.CaminhosExtras={ensure,annual,wealth,worth,renderSchool,renderAssets,businessCards,schoolAction};
+window.CaminhosExtras={ensure,annual,wealth,worth,renderSchool,renderAssets,businessCards,schoolAction,friendshipInvite,friendshipDecision};
 })();
