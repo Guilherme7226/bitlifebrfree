@@ -27,23 +27,7 @@ function row(icon,title,subtitle,link,opts={}){
 const go=id=>'data-go="'+id+'"';
 const action=id=>'data-act="activity" data-id="'+id+'"';
 function renderActivities(g){
- let out=screen('Atividades');
- out+=separator('Mente, corpo e esportes');
- out+=row('🧘','Mente e corpo','Melhore sua saúde e bem-estar',go('atividades-detalhes'));
- out+=row('🥋','Artes marciais','Jiu-jítsu, judô, boxe e mais',go('hobbies'));
- out+=row('🏃','Praticar esportes','Cuide do corpo',action('esporte'),{disabled:g.age<6||g.actions===0});
- out+=separator('Atividades');
- out+=row('⚖️','Crime e justiça','Escolhas perigosas e suas consequências',go('desafios'),{disabled:g.age<16});
- out+=row('🏥','Saúde e cuidados','Cuide de sua saúde e hábitos',go('atividades-detalhes'));
- out+=row('🛍️','Compras e patrimônio','Casas, carros, barcos e empresas',go('financas-detalhes'),{disabled:g.age<18});
- out+=row('🎭','Cinema e música','Explore a vida artística',go('fama'),{disabled:g.age<13});
- out+=row('🏞️','Natureza e passeios','Explore o mundo ao seu redor',action('explorar'),{disabled:g.actions===0});
- out+=row('🎒','Hobbies e lazer','Pratique novos interesses',action('hobby'),{disabled:g.age<6||g.actions===0});
- out+=row('📱','Mídias sociais','Publique e conquiste seguidores',go('fama'),{disabled:g.age<13});
- out+=separator('Ações rápidas');
- out+=row('📚','Estudar','Melhore sua inteligência',action('estudar'),{disabled:g.age<6||g.actions===0});
- out+=row('🧘','Meditar','Relaxe e alivie o estresse',action('meditar'),{disabled:g.actions===0});
- return out;
+ return screen('Atividades')+(window.CaminhosEveryday?.renderMenu(g)||'<div class="notice">Atividades indisponíveis. Atualize o jogo.</div>');
 }
 function renderCareer(g){
  const school=g.extra?.school;let out=screen(g.age<18?'Escola':'Profissão');
@@ -144,7 +128,8 @@ function renderStats(g){
  statRow('Inteligência','🧠',g.stats.inteligencia)+
  statRow('Aparência','✨',g.extra.appearance)+
  statRow('Carisma','💬',g.stats.carisma)+
- statRow('Disciplina','⚡',g.stats.disciplina)+'</div>';
+ statRow('Disciplina','⚡',g.stats.disciplina)+
+ statRow('Sorte','🍀',g.extra.luck??50)+'</div>';
 }
 function renderTab(g,tab){
  ensure(g);
