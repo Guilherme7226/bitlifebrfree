@@ -148,10 +148,10 @@ function renderTab(g,tab){
  if(tab==='financas')return renderFinance(g);
  return null;
 }
-document.addEventListener('click',event=>{
- const b=event.target.closest('[data-ui-person]');
- if(b&&typeof game!=='undefined'&&game){
-  const p=game.people.find(x=>Number(x.id)===Number(b.dataset.uiPerson));
+function openPerson(g,personId){
+ if(!g)return;
+ const game=g;
+  const p=game.people.find(x=>Number(x.id)===Number(personId));
   if(!p)return;
   const portrait=window.CaminhosWorld?.portrait(p.name,p.role,p.id,true)||esc(p.emoji||'👤');
   const blocked=!game.alive||!!game.pendingEvent||game.extra?.prison>0;
@@ -199,8 +199,10 @@ document.addEventListener('click',event=>{
      '<span class="social-option-more">•••</span></button>';
    }).join('')+'</div>';
   showModal('<div class="social-person-page">'+heading+interactions+'</div>');
- }
- if(event.target.closest('.retro-person-modal')?.dataset?.noAction)return;
+}
+document.addEventListener('click',event=>{
+ const b=event.target.closest('[data-ui-person]');
+ if(b&&typeof game!=='undefined'&&game)openPerson(game,b.dataset.uiPerson);
 });
-window.CaminhosUI={ensure,renderTab,renderStats};
+window.CaminhosUI={ensure,renderTab,renderStats,openPerson};
 })();
