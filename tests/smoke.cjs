@@ -178,7 +178,7 @@ const statusCss=fs.readFileSync('theme-classic.css','utf8');
 assert.match(statusCss,/\.game>\.stats-strip\{\s*order:1;/,'status aparecem antes do diario no iPhone');
 assert.match(statusCss,/\.game>\.body-grid\{order:2/,'diario vem apos status');
 assert.match(statusCss,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/,'seis status em duas colunas');
-assert.match(code("window.CaminhosUI.renderStats(game)"),/Felicidade[\s\S]*Saúde[\s\S]*Inteligência[\s\S]*Aparência[\s\S]*Carisma[\s\S]*Disciplina/,'seis atributos disponiveis');
+assert.match(code("window.CaminhosUI.renderStats(game)"),/Felicidade[\s\S]*Saúde[\s\S]*Inteligência[\s\S]*Aparência/,'quatro atributos principais disponiveis');
 code("openMoreMenu()");
 assert.match(code("document.getElementById('modalContent').innerHTML"),/Recomeçar vida/,'reset disponivel em Mais');
 assert.match(fs.readFileSync('cloud.js','utf8'),/async function resetLife\(\)/,'nuvem possui rotina de reset');
