@@ -179,8 +179,9 @@ function schoolAction(g,id,personId){
  if(id==='talk'){
    relationship=g.people.find(p=>Number(p.id)===Number(personId)&&['Colega','Professor(a)'].includes(p.role));
    if(!relationship)return;
-   relationship.bond=clamp(relationship.bond+rand(7,13));
-   delta={carisma:3,felicidade:3};title='Conversando na escola';desc='Você conversou com '+relationship.name+' e fortaleceram a relação.';
+   // Conversar na escola usa o mesmo sistema de afinidade e irritacao.
+   relationAction(Number(relationship.id),'aproximar');
+   return;
  }else if(id==='study'){
    s.average=clamp(s.average+rand(6,12));delta={inteligencia:5,disciplina:4,felicidade:-2};
    title='Preparação para prova';desc='Você estudou e melhorou seu desempenho escolar.';
