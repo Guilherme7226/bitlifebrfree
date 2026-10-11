@@ -18,6 +18,7 @@
 <body>
   <div class="app-shell">
     <header class="topbar">
+      <button type="button" id="openNavigation" class="icon-button nav-toggle hidden" aria-label="Abrir todas as seções" title="Menu do jogo">☰</button>
       <a class="brand" href="#" aria-label="Caminhos: início" id="brandHome"><span class="brand-mark">✦</span><span>CAMINHOS<span class="brand-dot">.</span><small>SIMULADOR DE VIDA</small></span></a>
       <div class="top-right"><span class="online"><span></span> Jogo local</span><button class="icon-button" id="openSettings" type="button" title="Configurações" aria-label="Configurações">⚙</button></div>
     </header>
@@ -39,13 +40,14 @@
     <main id="gameView" class="game hidden">
       <section class="profile-banner">
         <div class="profile-avatar" id="avatar">👶</div>
-        <div class="profile-heading"><div class="eyebrow" id="lifeStage">A PRIMEIRA PÁGINA</div><h1 id="heroName">Alex</h1><div class="profile-sub"><span id="ageLabel">0 anos</span><span class="dot-separator">·</span><span id="jobLabel">Descobrindo o mundo</span></div></div>
+        <div class="profile-heading"><button type="button" class="profile-home" id="homeShortcut" aria-label="Voltar ao diário da vida">⌂ <span>Início</span></button><div class="eyebrow" id="lifeStage">A PRIMEIRA PÁGINA</div><h1 id="heroName">Alex</h1><div class="profile-sub"><span id="ageLabel">0 anos</span><span class="dot-separator">·</span><span id="jobLabel">Descobrindo o mundo</span><span class="profile-actions" id="profileActions">3 ações</span></div></div>
         <div class="profile-money"><small>PATRIMÔNIO DISPONÍVEL</small><strong id="moneyLabel">R$ 0</strong><span id="savingsLabel">Investimentos: R$ 0</span></div>
       </section>
       <section class="stats-strip" id="statsStrip" aria-label="Atributos do personagem"></section>
       <div class="body-grid">
         <aside class="sidebar"><nav id="tabs" class="nav-list" aria-label="Seções do jogo">
           <button data-tab="vida" class="tab active">✦ <span>Minha vida</span></button>
+          <button data-tab="atividades" class="tab">🧭 <span>Atividades</span></button>
           <button data-tab="carreira" class="tab">💼 <span>Carreira</span></button>
           <button data-tab="relacoes" class="tab">♥ <span>Relações</span></button>
           <button data-tab="financas" class="tab">◈ <span>Finanças</span></button>
@@ -64,11 +66,11 @@
         </aside>
       </div>
       <nav class="mobile-dock" aria-label="Acesso rápido no iPhone">
-        <button type="button" data-dock="vida"><span>🏠</span>Vida</button>
-        <button type="button" data-dock="carreira"><span>💼</span>Trabalho</button>
-        <button type="button" data-dock="advance" class="dock-plus" aria-label="Avançar mais um ano"><span>+</span>Idade</button>
-        <button type="button" data-dock="relacoes"><span>💗</span>Relações</button>
-        <button type="button" data-dock="more"><span>☰</span>Mais</button>
+        <button type="button" data-dock="carreira" aria-label="Abrir trabalho e educação"><span aria-hidden="true">💼</span>Trabalho</button>
+        <button type="button" data-dock="financas" aria-label="Abrir bens e finanças"><span aria-hidden="true">🏠</span>Bens</button>
+        <button type="button" data-dock="advance" class="dock-plus" aria-label="Envelhecer um ano"><span aria-hidden="true">+</span>Idade</button>
+        <button type="button" data-dock="relacoes" aria-label="Abrir relações"><span aria-hidden="true">💞</span>Relações</button>
+        <button type="button" data-dock="atividades" aria-label="Abrir atividades"><span aria-hidden="true">🧭</span>Atividades</button>
       </nav>
     </main>
     <footer class="app-footer">CAMINHOS • Um jogo original sobre escolhas <span>Feito para jogar, experimentar e recomeçar.</span></footer>
