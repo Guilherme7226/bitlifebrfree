@@ -30,6 +30,7 @@ jobs:
           node --check life-extras.js
           node --check cloud.js
           node --check cloud-config.js
+          node tests/smoke.cjs
       - name: Empacotar somente arquivos publicos
         run: |
           mkdir -p _site
