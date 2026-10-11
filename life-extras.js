@@ -147,7 +147,7 @@ function renderSchool(g){
  const teachers=schoolPeople.filter(p=>p.role.toLowerCase().includes('professor'));
  const mates=schoolPeople.filter(p=>p.role==='Colega'||p.role==='Amizade').slice(0,8);
  const personCard=p=>'<div class="school-person"><div class="school-icon portrait-holder">'+(window.CaminhosWorld?.portrait(p.name,p.role,p.id)||clean(p.emoji))+'</div><div><strong>'+clean(p.name)+'</strong><small>'+clean(p.role)+' · Vínculo '+Math.round(p.bond)+'/100</small></div>'+
- (current?'<button type="button" class="secondary-button" data-life-extra="talk" data-person="'+Number(p.id)+'" '+(g.actions<=0?'disabled':'')+'>Conversar</button>':'')+'</div>';
+ (current?'<button type="button" class="secondary-button" data-life-extra="talk" data-person="'+Number(p.id)+'" '+(!g.alive?'disabled':'')+'>Conversar</button>':'')+'</div>';
  let out=displayTitle('🏫 Minha escola',current?'Colegas, professores, aprendizado e acontecimentos ao longo do ano.':'Recordações da sua vida escolar.');
  if(!current&&g.age>=18)out+=window.CaminhosPaths?.futureChoice(g)||'';
  out+='<div class="card"><div class="school-top"><span>📚 '+clean(s.name)+'</span><strong>'+lifeStageSchool(g)+'</strong></div><div class="school-metrics">'+
@@ -155,9 +155,9 @@ function renderSchool(g){
  '<div><small>Comportamento</small><strong>'+Math.round(s.discipline)+'/100</strong></div>'+
  '<div><small>Destaques</small><strong>'+Math.round(s.awards)+'</strong></div></div></div>';
  if(current){
-   const available=g.actions>0&&g.alive&&!g.pendingEvent;
+   const available=g.alive&&!g.pendingEvent&&!g.extra.prison;
    const options=[['study','📖 Estudar para a prova'],['homework','📝 Fazer lição'],['project','🔬 Participar de projeto'],['friends','🤝 Brincar com os colegas'],['teacher','🙋 Pedir ajuda ao professor'],['club','🎭 Clube escolar'],...(g.age>=15?[['vestibular','📚 Preparação para faculdade']]:[])];
-   out+='<div class="section-title">Vida escolar <small>'+g.actions+' ações restantes</small></div><div class="school-actions">'+
+   out+='<div class="section-title">Vida escolar <small>Prática livre</small></div><div class="school-actions">'+
     options.map(([id,label])=>'<button type="button" class="secondary-button" data-life-extra="school" data-id="'+id+'" '+(!available?'disabled':'')+'>'+label+'</button>').join('')+'</div>';
    if(g.pendingEvent)out+='<div class="notice">Resolva a decisão pendente para realizar atividades escolares.</div>';
  }
@@ -169,7 +169,7 @@ function renderSchool(g){
 function schoolAction(g,id,personId){
  ensure(g);
  if(!g.alive||g.age<4||g.age>=18)return showToast('A escola é acessível dos 4 aos 17 anos.');
- if(g.actions<=0)return showToast('Suas ações acabaram. Avance o ano.');
+ 
  if(g.pendingEvent)return showEvent();
  if(g.extra.prison>0)return showToast('Atividades escolares indisponíveis durante a prisão.');
  const s=g.extra.school;
@@ -205,7 +205,7 @@ function schoolAction(g,id,personId){
    s.events++;delta={carisma:5,felicidade:5,disciplina:2};
    title='Clube escolar';desc='Você participou de um clube de arte, esporte ou ciências.';
  }else return;
- g.actions--;statChange(delta);logLine(title,desc);save();render();showToast(desc);
+ statChange(delta);logLine(title,desc);save();render();showToast(desc);
 }
 function renderAssets(g){
  ensure(g);
@@ -223,7 +223,7 @@ function renderAssets(g){
      const value=worth(a,g),company=p[1]==='empresas';
      return '<article class="asset-tile owned"><div class="asset-tile-head"><span>'+p[2]+'</span><div><strong>'+clean(p[3])+'</strong><small>Comprado aos '+a.age+' anos'+(company?' · Nível '+(a.level||1):'')+'</small></div></div>'+
        '<p>Valor estimado: <b>'+brl(value)+'</b>'+(Number.isFinite(a.share)&&a.share<.999?' · Sua participação: '+Math.round(a.share*1000)/10+'%':'')+(company?'<br>Lucro acumulado: '+brl(a.profit||0):'')+'</p>'+
-       '<div class="asset-actions">'+(company?'<button class="secondary-button" data-life-extra="upgrade" data-inventory="'+Number(a.id)+'" '+(g.actions<1?'disabled':'')+'>Expandir</button>':'')+
+       '<div class="asset-actions">'+(company?'<button class="secondary-button" data-life-extra="upgrade" data-inventory="'+Number(a.id)+'" '+(!g.alive?'disabled':'')+'>Expandir</button>':'')+
        '<button class="secondary-button" data-life-extra="sell" data-inventory="'+Number(a.id)+'">Vender</button></div></article>';
    }).join('')+'</div>';
  }else out+='<div class="notice">Você ainda não tem bens comprados neste catálogo. Veja as opções abaixo.</div>';
@@ -259,9 +259,9 @@ function assetsAction(g,action,itemId,assetId){
    const p=item(itemId);if(!p)return;
    if(inv.length>=70)return showToast('Limite de 70 bens por partida.');
    if(g.cash<p[4])return showToast('Saldo insuficiente: faltam '+brl(p[4]-g.cash)+'.');
-   if(g.actions<1)return showToast('Avance o ano para comprar.');
+   
    if(!confirm('Comprar '+p[3]+' por '+brl(p[4])+'?'))return;
-   g.actions--;g.cash-=p[4];
+   g.cash-=p[4];
    const object={id:e.assetSequence++,type:p[0],age:g.age,years:0,level:1,employees:1,profit:0};
    inv.push(object);
    logLine('Novo bem adquirido','Você comprou '+p[3]+' por '+brl(p[4])+'.');
@@ -275,10 +275,10 @@ function assetsAction(g,action,itemId,assetId){
      logLine('Bem vendido','Você vendeu '+p[3]+' por '+brl(resale)+'.');
    }else if(action==='upgrade'&&p[1]==='empresas'){
      const level=Number(a.level)||1,price=Math.round(p[4]*.32*level);
-     if(g.actions<1)return showToast('Avance o ano para expandir.');
+     
      if(g.cash<price)return showToast('Expansão custa '+brl(price)+'.');
      if(!confirm('Expandir '+p[3]+' por '+brl(price)+'?'))return;
-     g.cash-=price;g.actions--;a.level=level+1;a.employees=(a.employees||1)+3;
+     g.cash-=price;a.level=level+1;a.employees=(a.employees||1)+3;
      logLine('Expansão do negócio','Sua empresa '+p[3]+' agora é nível '+a.level+'.');
    }
  }
