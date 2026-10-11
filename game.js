@@ -257,19 +257,19 @@ function chooseStrike(id){
  if(!person)return;
  const moves=window.CaminhosPaths?.combatMoves(game)||[];
  const trained=moves.filter(m=>m.art!=='Básico');
+ const renderMove=move=>'<button type="button" class="combat-option" data-act="choose-strike" data-id="'+Number(person.id)+'" data-move="'+escapeHTML(move.id)+'">'+
+   '<span class="combat-option-emoji">'+move.emoji+'</span><span><strong>'+escapeHTML(move.name)+'</strong>'+
+   '<small>'+escapeHTML(move.art)+' · Potência '+move.power+'/5'+(move.skill?' · Habilidade '+move.skill+'/100':'')+'</small></span>'+
+   '<span class="combat-option-next">›</span></button>';
  showModal('<div class="combat-dialog"><div class="combat-dialog-icon">🥊</div>'+
   '<div class="card-kicker">INTERAÇÃO · CONSEQUÊNCIAS</div>'+
   '<h2 id="modalTitle">Agredir '+escapeHTML(person.name)+'?</h2>'+
-  '<p>Escolha o movimento do personagem. Golpes mais avançados são desbloqueados ao praticar artes marciais. A vítima pode reagir, se ferir ou denunciar você.</p>'+
+  '<p>Escolha um golpe. Técnicas avançadas só aparecem depois que você treina artes marciais e melhora sua habilidade. A vítima pode reagir, se ferir ou denunciar você.</p>'+
   '<div class="combat-divider">Golpes básicos</div>'+
-  '<div class="combat-options">'+moves.map(move=>
-   '<button type="button" class="combat-option" data-act="choose-strike" data-id="'+Number(person.id)+'" data-move="'+escapeHTML(move.id)+'">'+
-   '<span class="combat-option-emoji">'+move.emoji+'</span><span><strong>'+escapeHTML(move.name)+'</strong>'+
-   '<small>'+escapeHTML(move.art)+' · Potência '+move.power+'/5'+(move.skill?' · Habilidade '+move.skill+'/100':'')+'</small></span>'+
-   '<span class="combat-option-next">›</span></button>'+
-   (move.art!=='Básico'?'':'')
-  ).join('')+'</div>'+
-  (trained.length===0?'<p class="combat-hint">🥋 Treine jiu-jítsu, judô, boxe e outras artes marciais em Atividades para desbloquear novos golpes.</p>':'')+
+  '<div class="combat-options">'+moves.filter(m=>m.art==='Básico').map(renderMove).join('')+'</div>'+
+  (trained.length?'<div class="combat-divider">🥋 Golpes aprendidos</div>'+
+   '<div class="combat-options">'+trained.map(renderMove).join('')+'</div>':
+   '<p class="combat-hint">🥋 Treine jiu-jítsu, judô, boxe e outras artes marciais em Atividades para desbloquear novos golpes.</p>')+
   '<button type="button" class="secondary-button combat-cancel" data-act="dismiss-result">Cancelar</button></div>');
 }
 function performStrike(id,moveId){
@@ -296,7 +296,7 @@ function performStrike(id,moveId){
  person.bond=clamp(oldBond-(counter?18:12)-power*2-Math.round(Math.random()*8));
  person.irritation=clamp((person.irritation||0)+25+power*6);
  if(!Number.isFinite(person.health))person.health=85;
- person.health=clamp(person.health-injury*(serious?2:1));
+ person.health=Math.max(1,clamp(person.health-injury*(serious?2:1)));
  statChange({felicidade:-Math.min(14,5+counter*2),saude:-damage});
  let title=successful?'Você agrediu '+person.name:'A agressão não deu certo';
  let story=successful?'Você tentou usar '+move.name.toLowerCase()+' em '+person.name+'. '+person.name+
