@@ -13,15 +13,16 @@
   <meta name="description" content="Caminhos: seu simulador de vida com escolhas, carreira, família e histórias inesperadas.">
   <title>Caminhos — Simulador de Vida</title>
   <link rel="stylesheet" href="styles.css?v=20261011-vida">
-  <link rel="stylesheet" href="theme-classic.css?v=20261011-status6">
-  <script src="achievements.js" defer></script>
+  <link rel="stylesheet" href="theme-classic.css?v=20261011-dynasty">
+  <script src="achievements.js?v=20261011-dynasty" defer></script>
+  <script src="dynasty.js?v=20261011-dynasty" defer></script>
   <script src="life-extras.js?v=20261011-vida" defer></script>
   <script src="career-paths.js?v=20261011-vida" defer></script>
   <script src="sim-world.js?v=20261011-vida" defer></script>
   <script src="ui-familiar.js?v=20261011-categories" defer></script>
-  <script src="game.js?v=20261011-status-reset" defer></script>
+  <script src="game.js?v=20261011-dynasty" defer></script>
   <script src="cloud-config.js" defer></script>
-  <script src="cloud.js?v=20261011-status-reset" defer></script>
+  <script src="cloud.js?v=20261011-account-achievements" defer></script>
 </head>
 <body>
   <div class="app-shell">
@@ -42,7 +43,7 @@
         <label for="playerName">Seu nome</label><input id="playerName" name="name" maxlength="32" minlength="2" value="Alex" placeholder="Como você se chama?" required>
         <label for="playerCity">Onde você nasceu?</label><select id="playerCity" name="city"><option>Santos, SP</option><option>São Paulo, SP</option><option>Rio de Janeiro, RJ</option><option>Belo Horizonte, MG</option><option>Curitiba, PR</option><option>Recife, PE</option><option>Porto Alegre, RS</option><option>Outra cidade do Brasil</option></select>
         <label for="playerTrait">Sua personalidade</label><select id="playerTrait" name="trait"><option value="ambicioso">🚀 Ambicioso — foco na carreira</option><option value="carismatico">💬 Carismático — facilidade social</option><option value="curioso">📚 Curioso — aprende rápido</option><option value="tranquilo">🌿 Tranquilo — menos estresse</option></select>
-        <button type="submit" class="primary-button wide">Começar minha vida <span>→</span></button><p class="tiny-note">🔒 Seu progresso fica salvo neste navegador, neste dispositivo.</p>
+        <button type="submit" class="primary-button wide">Começar minha vida <span>→</span></button><button type="button" class="secondary-button wide" data-act="account-achievements">🏆 Ver conquistas da conta</button><p class="tiny-note">🔒 Vidas e gerações ficam na partida. Suas conquistas são permanentes na conta; ao conectar Google, sincronizam entre dispositivos.</p>
       </form>
     </section>
     <main id="gameView" class="game hidden">
@@ -61,6 +62,7 @@
           <button data-tab="financas" class="tab">◈ <span>Finanças</span></button>
           <button data-tab="historia" class="tab">☷ <span>Minha história</span></button>
           <button data-tab="conquistas" class="tab">🏆 <span>Conquistas</span></button>
+          <button data-tab="arvore" class="tab">🌳 <span>Árvore familiar</span></button>
           <button data-tab="ia" class="tab">✳ <span>Inteligência artificial</span></button>
           <button data-tab="negocios" class="tab">🏢 <span>Negócios</span></button>
           <button data-tab="politica" class="tab">🗳️ <span>Política</span></button>
