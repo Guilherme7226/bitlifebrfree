@@ -136,7 +136,7 @@ function renderSchool(g){
  if(g.age<4)return displayTitle('Minha escola','Sua jornada escolar começará aos 4 anos.')+
  '<div class="card"><h3>🧸 Os primeiros anos</h3><p>Você ainda está em casa com sua família. Avance até os 4 anos para conhecer colegas e professores.</p></div>';
  const current=g.age<=17&&!s.finished;
- const teachers=schoolPeople.filter(p=>p.role.includes('Professor'));
+ const teachers=schoolPeople.filter(p=>p.role.toLowerCase().includes('professor'));
  const mates=schoolPeople.filter(p=>p.role==='Colega'||p.role==='Amizade').slice(0,8);
  const personCard=p=>'<div class="school-person"><div class="school-icon">'+clean(p.emoji)+'</div><div><strong>'+clean(p.name)+'</strong><small>'+clean(p.role)+' · Vínculo '+Math.round(p.bond)+'/100</small></div>'+
  (current?'<button type="button" class="secondary-button" data-life-extra="talk" data-person="'+Number(p.id)+'" '+(g.actions<=0?'disabled':'')+'>Conversar</button>':'')+'</div>';
