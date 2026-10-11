@@ -172,7 +172,7 @@ const iosCss=fs.readFileSync('theme-classic.css','utf8');
 assert.match(iosCss,/height:calc\(64px \+ env\(safe-area-inset-top, 0px\)\)/,'cabeçalho respeita barra de status');
 assert.match(iosCss,/padding-top:env\(safe-area-inset-top, 0px\)/,'reserva vertical segura do iPhone');
 assert.match(iosCss,/top:calc\(159px \+ env\(safe-area-inset-top, 0px\)\)/,'título fixo não invade o cabeçalho');
-assert.match(fs.readFileSync('index.html','utf8'),/theme-classic\.css\?v=20261011-combate/,'cache do iPhone atualizado');
+assert.match(fs.readFileSync('index.html','utf8'),/theme-classic\.css\?v=20261011-school-clubs/,'cache do iPhone atualizado');
 assert.doesNotMatch(fs.readFileSync('index.html','utf8'),/data-tab="escola"|data-tab="hobbies"/,'school and martial arts accessed in relevant parent sections');
 const statusCss=fs.readFileSync('theme-classic.css','utf8');
 assert.match(statusCss,/\.game>\.stats-strip\{\s*order:1;/,'status aparecem antes do diario no iPhone');
