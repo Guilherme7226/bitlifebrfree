@@ -47,6 +47,17 @@
     ['campeao','Esportes','🥇','Campeão','Conquiste um título na luta.',g=>!!g.extra?.champion],
     ['redencao','Riscos','🔓','Segunda chance','Saia da prisão após cumprir pena.',g=>g.history.some(h=>h.title==='Liberdade')],
     ['deus','Especial','✨','Arquiteto do destino','Use o Modo Criador.',g=>(g.extra?.godEdits||0)>=1]
+    ['escola','Escola','🏫','Primeira aula','Comece a frequentar a escola.',g=>g.age>=4&&!!g.extra?.school],
+    ['boas-notas','Escola','📗','Aluno exemplar','Tenha média escolar de 90 pontos.',g=>(g.extra?.school?.average||0)>=90],
+    ['trabalho-escola','Escola','🔬','Feira de ciências','Participe de três projetos escolares.',g=>(g.extra?.school?.projects||0)>=3],
+    ['destaque-escolar','Escola','🏅','Destaque escolar','Receba três destaques na escola.',g=>(g.extra?.school?.awards||0)>=3],
+    ['fim-escola','Escola','🎓','Formado no ensino médio','Conclua sua vida escolar.',g=>!!g.extra?.school?.finished],
+    ['carro','Bens','🚗','Primeiro carro','Compre seu primeiro carro.',g=>(g.extra?.assetInventory||[]).some(a=>['usado','hatch','sedan','suv','eletrico','esportivo','colecao'].includes(a.type))],
+    ['lancha','Bens','🛥️','Vida no mar','Compre uma embarcação.',g=>(g.extra?.assetInventory||[]).some(a=>['jetski','lancha','veleiro','iate','barco'].includes(a.type))],
+    ['aviao','Bens','✈️','Conquiste os céus','Compre uma aeronave.',g=>(g.extra?.assetInventory||[]).some(a=>['ultraleve','monomotor','helicoptero','jato'].includes(a.type))],
+    ['mansao','Bens','🏰','Vida de luxo','Compre uma mansão.',g=>(g.extra?.assetInventory||[]).some(a=>a.type==='mansao')],
+    ['frota','Bens','🚙','Colecionador','Tenha cinco bens simultaneamente.',g=>(g.extra?.assetInventory||[]).length>=5],
+    ['multiempresario','Negócios','🏢','Empresário múltiplo','Tenha três empresas ao mesmo tempo.',g=>(g.extra?.assetInventory||[]).filter(a=>['padaria','barbearia','restaurante','mercado','transportadora','hotel','companhia'].includes(a.type)).length>=3],
   ];
   const achievements = defs.map(([id,cat,emoji,name,desc,check])=>({id,cat,emoji,name,desc,check}));
   function evaluate(g) {
