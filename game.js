@@ -190,13 +190,24 @@ async function aiEvent(){if(!config.enableAI||!config.endpoint)return null;const
  const response=await fetch(config.endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({age:game.age,trait:game.trait,stage:stage(),job:jobInfo()?.name||'Estudante ou sem emprego',stats:safeStats,city:game.city}),signal:ctl.signal});
  if(!response.ok)throw Error('HTTP '+response.status);const data=await response.json();return cleanAIEvent(data)
  }finally{clearTimeout(t)}}
-async function advance(){if(!game||!game.alive||loading)return;if(game.pendingEvent){showEvent();return}loading=true;game.age++;game.actions=3;window.CaminhosSkills?.ensure(game);window.CaminhosEveryday?.annual(game);if(enforceHealthDeath()||!game.alive){save();render();loading=false;showEnd();return}yearSummary();save();render();if(!game.alive){loading=false;showEnd();return}if(game.age===18&&window.CaminhosPaths?.offerGraduation(game)){loading=false;window.CaminhosPaths.openGraduation(game);return}if(Math.random()<.75){let e=null;if(config.enableAI&&config.endpoint){showToast('Criando um novo acontecimento...');try{e=await aiEvent()}catch(err){showToast('IA indisponível. Usando história local.')}}if(!e)e=(Math.random()<.36?randomAttributeEvent():null)||(Math.random()<.67?window.CaminhosEveryday?.randomEvent(game):null)||offlineEvent();game.pendingEvent=e;save();showEvent()}else{logLine('Mais um ano de vida','Você completou '+game.age+' '+(game.age===1?'ano':'anos')+' e segue construindo seu próprio caminho.')}loading=false;render()}
+async function advance(){if(!game||!game.alive||loading)return;if(game.pendingEvent){showEvent();return}loading=true;game.age++;game.actions=3;window.CaminhosSkills?.ensure(game);window.CaminhosEveryday?.annual(game);if(enforceHealthDeath()||!game.alive){save();render();loading=false;showEnd();return}yearSummary();save();render();if(!game.alive){loading=false;showEnd();return}if(game.age===18&&window.CaminhosPaths?.offerGraduation(game)){loading=false;window.CaminhosPaths.openGraduation(game);return}const friendInvite=window.CaminhosExtras?.friendshipInvite(game);
+ if(friendInvite){
+  game.pendingEvent=friendInvite;save();showEvent();loading=false;return;
+ }
+ if(Math.random()<.75){let e=null;if(config.enableAI&&config.endpoint){showToast('Criando um novo acontecimento...');try{e=await aiEvent()}catch(err){showToast('IA indisponível. Usando história local.')}}if(!e)e=(Math.random()<.36?randomAttributeEvent():null)||(Math.random()<.67?window.CaminhosEveryday?.randomEvent(game):null)||offlineEvent();game.pendingEvent=e;save();showEvent()}else{logLine('Mais um ano de vida','Você completou '+game.age+' '+(game.age===1?'ano':'anos')+' e segue construindo seu próprio caminho.')}loading=false;render()}
 function applyChoice(i){
  const event=game?.pendingEvent;if(!event)return;
  const choice=event.choices[i];if(!choice)return;
  game.pendingEvent=null;
+ if(event.source==='friendship'){
+  const person=game.people.find(p=>Number(p.id)===Number(event.personId));
+  if(person){
+   window.CaminhosExtras?.friendshipDecision(game,person.id,choice.accept===true);
+  }
+ }
  statChange(choice.delta);
- logLine(event.title,event.story+' Sua escolha: '+choice.text+'.');
+ logLine(event.title,event.story+' Sua escolha: '+choice.text+'.'+
+  (event.source==='friendship'?(choice.accept===true?' Agora vocês são amigos e aparecem em Relacionamentos.':' O convite foi recusado.'):''));
  if(!game.alive)return;
  if(event.source==='cotidiano'){
    const died=window.CaminhosEveryday?.applyChoice(game,choice);
@@ -210,9 +221,18 @@ function performAction(key){if(safeExtra().prison>0)return showToast('Enquanto e
  for(const stat of Object.keys(delta)){if(stat!=='cash'&&Number.isFinite(delta[stat]))delta[stat]=Math.trunc(delta[stat]/(1+count*.15))}
  statChange(delta);
  if(a.relation)game.people.filter(p=>p.role==='Mãe'||p.role==='Pai').forEach(p=>p.bond=clamp(p.bond+8));
- if(a.friend){let friend=game.people.find(p=>p.role==='Amizade');if(!friend){friend={id:Date.now(),name:choose(NAMES),role:'Amizade',emoji:'🤗',bond:45};game.people.push(friend);logLine('Uma nova amizade','Você conheceu '+friend.name+'!')}else friend.bond=clamp(friend.bond+rand(7,13))}
+ if(a.friend){
+  let acquaintance=game.people.find(p=>!p.friend&&['Colega','Ex-colega','Conhecido'].includes(p.role));
+  if(!acquaintance){
+   acquaintance={id:Math.max(0,...game.people.map(p=>Number(p.id)||0))+1,name:choose(NAMES),role:'Conhecido',
+    emoji:'🤗',bond:rand(50,59),friend:false};
+   game.people.push(acquaintance);
+   logLine('Conheceu uma pessoa','Você conheceu '+acquaintance.name+'. Para se tornarem amigos, fortaleça o vínculo e peça amizade.');
+  }else acquaintance.bond=clamp(acquaintance.bond+rand(7,13));
+  var socialContact=acquaintance;
+ }
  if(a.work&&game.job&&count===0){game.jobYears+=.15;if(Math.random()<.22){game.cash+=800;showToast('Você recebeu um bônus de '+brl(800)+'!')}}
- logLine(a.name,'Você decidiu: '+a.name.toLowerCase()+'. Pequenos hábitos fazem uma grande diferença.');save();render()}
+ logLine(a.name,'Você decidiu: '+a.name.toLowerCase()+'. Pequenos hábitos fazem uma grande diferença.');save();render();if(a.friend&&socialContact)window.CaminhosUI?.openPerson(game,socialContact.id)}
 function setJob(id){if(!game?.alive)return;const c=CAREERS.find(x=>x.id===id);if(!c)return;const requirement=jobRequirement(c);if(requirement)return showToast(requirement);if(safeExtra().prison>0)return showToast('Você está cumprindo pena.');window.CaminhosPaths?.leave(game,id);const previous=jobInfo()?.name||'nenhum';game.job=id;game.jobYears=0;const history=(safeExtra().careerHistory||=[]);if(!history.includes(id))history.push(id);logLine('Novo trabalho',`Você deixou ${previous} e começou sua carreira como ${c.name}.`);save();render();showToast('Novo emprego: '+c.name+'!')}
 function jobRequirement(c){
  if(game.age<c.age)return 'Disponível aos '+c.age+' anos.';
@@ -336,6 +356,28 @@ function relationAction(id,action){
  let title='',message='';
  const log=(entry,desc)=>{logLine(entry,desc);save();render();relationshipFeedback(p,title,message,oldBond,oldCash)};
  if(action==='agredir')return chooseStrike(id);
+ if(action==='pedir-amizade'){
+  const family=['Mãe','Pai','Padrasto','Madrasta','Avó','Avô','Irmão','Irmã','Filho','Filha','Cônjuge'];
+  if(family.includes(p.role)||['Namoro','Ex-relacionamento'].includes(p.role))return;
+  if(p.friend===true)return showToast(p.name+' já é seu amigo(a).');
+  if(p.bond<65)return showToast('A amizade exige vínculo de pelo menos 65/100. Converse com '+p.name+' primeiro.');
+  if(p.friendRequestYear===game.age)return showToast('Você já pediu amizade a '+p.name+' neste ano. Aguarde até o próximo.');
+  p.friendRequestYear=game.age;
+  const chance=Math.max(.3,Math.min(.96,.36+p.bond/160-(p.irritation||0)/225));
+  if(Math.random()<chance){
+   window.CaminhosExtras?.friendshipDecision(game,p.id,true);
+   title=p.name+' aceitou sua amizade!';
+   message='Você pediu amizade e '+p.name+' aceitou! Agora vocês são amigos e esta pessoa aparece em Relacionamentos.';
+   statChange({felicidade:5});
+  }else{
+   p.bond=clamp(p.bond-3);
+   p.irritation=clamp((p.irritation||0)+5);
+   title=p.name+' preferiu não aceitar a amizade';
+   message='Você fez o convite, mas '+p.name+' ainda não está pronto(a) para ser seu amigo(a).';
+  }
+  log('Pedido de amizade',message);
+  return;
+ }
  if(action==='casar'){
   if(game.age<18||Number(id)!==Number(game.partnerId)||p.bond<65)return showToast('É preciso ter 18 anos e vínculo de 65 ou mais para casar.');
   if(game.cash<3500)return showToast('Você precisa de R$ 3.500 para o casamento.');
@@ -523,6 +565,10 @@ function relationAction(id,action){
   message+=' Porém, '+p.name+' ainda está irritado(a) e precisa de espaço.';
  }
  p.bond=clamp(p.bond+delta);
+ if(p.friend===true&&p.bond<=10&&p.irritation>=45){
+  p.friend=false;
+  message+=' '+p.name+' ficou tão magoado(a) que decidiu desfazer a amizade.';
+ }
  if(action==='aproximar'||action==='passar-tempo')statChange({felicidade:p.bond>oldBond?2:-2});
  if(['discutir','provocar','ignorar'].includes(action))statChange({felicidade:-2});
  log('Relacionamento: '+title,message+' Vínculo: '+oldBond+' → '+p.bond+'/100.');
