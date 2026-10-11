@@ -63,12 +63,11 @@ function enrollment(g,id,route){
  ensure(g);const p=svc(id);if(!p)return;
  if(g.extra.publicService.training)return showToast('Conclua a formação atual antes de iniciar outra.');
  const reason=entryReason(g,id,route);if(reason)return showToast(reason);
- if(g.actions<1)return showToast('Avance um ano para ter novas ações.');
+ 
  if(g.pendingEvent)return showEvent();
  if(g.extra?.prison>0)return showToast('Formação indisponível na prisão.');
  if(currentService(g)?.id===id)return showToast('Você já trabalha nesta corporação.');
  if(!confirm('Iniciar formação em '+p.name+' como '+(route==='oficial'?'oficial':'praça/agente')+'? Leva um ano no simulador.'))return;
- g.actions--;
  g.extra.publicService.training={id,route:p.type==='civil'?'praca':route,yearsLeft:1,progress:45};
  logLine('Formação profissional','Você ingressou na formação de '+p.name+'. No próximo ano, poderá concluir o curso.');
  save();render();
@@ -104,8 +103,8 @@ function serviceBadge(g){
  return '<div class="service-card"><div class="service-header"><strong>'+p.emoji+' '+clean(p.name)+'</strong><span class="tag green">'+clean(s.route==='oficial'?'OFICIAL':p.type==='civil'?'AGENTE':'PRAÇA')+'</span></div>'+
  '<div class="service-rank">'+clean(rankName(g))+'</div><p>Tempo de serviço: '+Math.floor(s.years)+' ano(s) · Mérito: '+s.merit+'/100 · Atendimentos e missões: '+s.missions+'</p>'+
  '<div class="service-progress"><span style="width:'+Math.min(100,s.merit)+'%"></span></div>'+
- '<div class="mini-buttons"><button type="button" class="secondary-button" data-path-act="practice" '+(g.actions<1||!g.alive?'disabled':'')+'>🏋️ Treinamento profissional</button>'+
- '<button type="button" class="secondary-button" data-path-act="mission" '+(g.actions<1||!g.alive?'disabled':'')+'>🎖️ Cumprir serviço</button></div>'+
+ '<div class="mini-buttons"><button type="button" class="secondary-button" data-path-act="practice" '+(!g.alive?'disabled':'')+'>🏋️ Treinamento profissional</button>'+
+ '<button type="button" class="secondary-button" data-path-act="mission" '+(!g.alive?'disabled':'')+'>🎖️ Cumprir serviço</button></div>'+
  '<p class="tiny-note">Promoções simuladas por tempo, disciplina e mérito. Patentes e remunerações são fictícias.</p></div>';
 }
 function onAnnual(g){
@@ -141,11 +140,10 @@ function onAnnual(g){
 function serviceAction(g,id){
  ensure(g);const s=currentService(g),t=trainingFor(g);
  if(!s&&!t)return showToast('Entre em uma formação ou carreira primeiro.');
- if(g.actions<1)return showToast('Não há ações disponíveis neste ano.');
+ 
  if(g.pendingEvent)return showEvent();
  if(g.extra?.prison>0)return showToast('Serviço indisponível na prisão.');
  if(id==='mission'&&!s)return showToast('Conclua a formação antes de atuar.');
- g.actions--;
  if(id==='practice'){
    if(t)t.progress=clamp(t.progress+rand(10,17));
    if(s)s.merit=clamp(s.merit+rand(10,17));
@@ -197,7 +195,7 @@ function trainingCard(g){
  return '<div class="service-card"><h3>📋 Formação em andamento</h3><p>Instituição: '+clean(svc(t.id)?.name||'')+' · Trilha: '+(t.route==='oficial'?'Oficiais':'Praças e agentes')+'</p>'+
  '<p>Tempo restante: '+Math.max(0,t.yearsLeft)+' ano(s) · Progresso: '+t.progress+'/100</p>'+
  '<div class="service-progress"><span style="width:'+t.progress+'%"></span></div>'+
- '<button type="button" class="secondary-button" data-path-act="practice" '+(g.actions<1?'disabled':'')+'>🏃 Preparação e treinamento</button></div>';
+ '<button type="button" class="secondary-button" data-path-act="practice" '+(!g.alive?'disabled':'')+'>🏃 Preparação e treinamento</button></div>';
 }
 function renderServices(g){
  ensure(g);
@@ -236,14 +234,14 @@ function renderMartial(g){
  const inventory=MARTIAL.map(a=>({art:a,stats:g.extra.martialArts[a.id]}));
  const trained=inventory.filter(({stats})=>stats?.trainings>0).length;
  return displayTitle('🥋 Hobbies e artes marciais','Treine uma modalidade, evolua seu nível e participe de competições fictícias.')+
- '<div class="martial-overview"><strong>'+trained+' / '+MARTIAL.length+' modalidades praticadas</strong><p>Os treinos gastam uma ação do ano. Crianças treinam sem custo; adultos pagam a aula.</p></div>'+
+ '<div class="martial-overview"><strong>'+trained+' / '+MARTIAL.length+' modalidades praticadas</strong><p>Treine quantas vezes quiser por ano. Seu talento e a sorte influenciam a evolução. Crianças treinam sem custo; adultos pagam a aula.</p></div>'+
  '<div class="martial-grid">'+inventory.map(({art:a,stats:r})=>{
   const skill=r?.skill||0,trainings=r?.trainings||0,wins=r?.wins||0,medals=r?.medals||0;
-  const canTrain=g.age>=a.minAge&&g.alive&&g.actions>0&&!g.pendingEvent&&(g.age<16||g.cash>=a.cost);
-  const canCompete=g.age>=12&&g.actions>0&&!g.pendingEvent&&skill>=35&&(g.age<16||g.cash>=250)&&g.alive;
+  const canTrain=g.age>=a.minAge&&g.alive&&!g.pendingEvent&&!g.extra.prison&&(g.age<16||g.cash>=a.cost);
+  const canCompete=g.age>=12&&!g.pendingEvent&&!g.extra.prison&&skill>=35&&(g.age<16||g.cash>=250)&&g.alive;
   return '<article class="martial-card"><div class="martial-head"><span>'+a.emoji+'</span><div><strong>'+a.name+'</strong><small>'+levelName(a,skill)+'</small></div></div>'+
    '<div class="service-progress"><span style="width:'+skill+'%"></span></div>'+
-   '<p>Habilidade '+skill+'/100 · '+trainings+' treino(s) · '+wins+' vitórias · '+medals+' medalha(s)</p>'+
+   '<p>Habilidade '+skill+'/100 · Talento '+(window.CaminhosSkills?.talent(g,'martial-'+a.id)??50)+'% · '+trainings+' treino(s) · '+wins+' vitórias · '+medals+' medalha(s)</p>'+
    '<div class="mini-buttons"><button class="secondary-button" data-path-act="martial-train" data-id="'+a.id+'" '+(canTrain?'':'disabled')+'>Treinar'+(g.age>=16?' · '+brl(a.cost):'')+'</button>'+
    '<button class="secondary-button" data-path-act="martial-compete" data-id="'+a.id+'" '+(canCompete?'':'disabled')+'>🏅 Competir</button></div>'+
    (g.age<a.minAge?'<p class="tiny-note">A partir dos '+a.minAge+' anos.</p>':'')+
@@ -253,7 +251,7 @@ function renderMartial(g){
 function martialAction(g,id,act){
  const art=martialName(id);if(!art)return;
  if(!g.alive||g.age<art.minAge)return showToast('Esta modalidade ainda não está disponível.');
- if(!g.actions)return showToast('Você não tem mais ações neste ano.');
+ 
  if(g.pendingEvent)return showEvent();
  if(g.extra?.prison>0)return showToast('Não pode treinar ou competir durante a prisão.');
  const price=g.age>=16?(act==='compete'?250:art.cost):0;
@@ -261,12 +259,12 @@ function martialAction(g,id,act){
  const r=martialState(g,id),before=levelName(art,r.skill);
  if(act==='compete'){
    if(g.age<12||r.skill<35)return showToast('Para competir, você precisa ter 12 anos e 35 de habilidade.');
-   g.actions--;g.cash-=price;
+   g.cash-=price;
    const success=Math.random()<Math.min(.92,.2+r.skill*.006+g.stats.disciplina*.002);
    if(success){r.wins++;r.medals++;if(g.age>=18)g.cash+=rand(200,1400);statChange({felicidade:7,carisma:3});logLine('Campeonato de '+art.name,'Você venceu uma competição e conquistou uma medalha!')}
    else{statChange({felicidade:-3,disciplina:2});logLine('Competição de '+art.name,'Você participou, mas não venceu. A experiência vai ajudar no próximo torneio.')}
  }else{
-   g.actions--;g.cash-=price;r.trainings++;r.skill=clamp(r.skill+rand(6,12));
+   g.cash-=price;r.trainings++;const improvement=window.CaminhosSkills?.practice(g,'martial-'+id);r.skill=clamp(r.skill+(improvement?.gain??rand(3,7)));
    if(!g.extra.fightSkill||!Number.isFinite(g.extra.fightSkill))g.extra.fightSkill=0;
    g.extra.fightSkill=clamp(g.extra.fightSkill+rand(2,5));
    statChange({saude:5,disciplina:4,felicidade:4});
