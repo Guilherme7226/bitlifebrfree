@@ -85,7 +85,16 @@ function loadConfig(){try{return {...{endpoint:'',enableAI:false},...JSON.parse(
 function persistConfig(){try{localStorage.setItem(CONFIG_KEY,JSON.stringify(config))}catch{showToast('Não foi possível salvar as configurações.')}}
 function restore(){try{const obj=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');if(isValidGame(obj)){obj.extra=extraData(obj.extra);return obj}return null}catch{return null}}
 function isValidGame(g){return !!(g&&g.version===1&&typeof g.name==='string'&&Number.isInteger(g.age)&&g.age>=0&&g.age<=130&&g.stats&&Object.keys(STAT_LABELS).every(k=>typeof g.stats[k]==='number')&&Array.isArray(g.history)&&Array.isArray(g.people)&&typeof g.cash==='number')}
-function save(){if(!game)return false;try{window.CaminhosDynasty?.ensure(game);window.CaminhosSkills?.ensure(game);window.CaminhosExtras?.ensure(game);window.CaminhosPaths?.ensure(game);window.CaminhosWorld?.ensure(game);window.CaminhosUI?.ensure(game);const earned=window.CaminhosAchievements?.evaluate(game)||[];localStorage.setItem(SAVE_KEY,JSON.stringify(game));if(earned.length)showToast('🏆 Conquista: '+earned.map(a=>a.name).slice(0,2).join(', ')+(earned.length>2?' e outras!':''));window.CaminhosCloud?.queueSave(game);return true}catch{showToast('Não foi possível salvar seu progresso neste navegador.');return false}}
+function enforceHealthDeath(reason){
+ if(!game?.alive||!game.stats||Number(game.stats.saude)>0)return false;
+ game.stats.saude=0;game.alive=false;game.pendingEvent=null;
+ const message=reason||'A saúde de '+game.name+' chegou a 0. Sua jornada terminou aos '+game.age+' anos.';
+ game.history.unshift({age:game.age,title:'Saúde esgotada',description:message});
+ game.history=game.history.slice(0,150);game.lastEvent=message;
+ window.CaminhosDynasty?.recordDeath(game);
+ return true;
+}
+function save(){if(!game)return false;const healthDeath=enforceHealthDeath();try{window.CaminhosDynasty?.ensure(game);window.CaminhosSkills?.ensure(game);window.CaminhosExtras?.ensure(game);window.CaminhosPaths?.ensure(game);window.CaminhosWorld?.ensure(game);window.CaminhosUI?.ensure(game);const earned=window.CaminhosAchievements?.evaluate(game)||[];localStorage.setItem(SAVE_KEY,JSON.stringify(game));if(earned.length)showToast('🏆 Conquista: '+earned.map(a=>a.name).slice(0,2).join(', ')+(earned.length>2?' e outras!':''));window.CaminhosCloud?.queueSave(game);if(healthDeath){render();showEnd()}return true}catch{showToast('Não foi possível salvar seu progresso neste navegador.');return false}}
 function logLine(title,description){game.history.unshift({age:game.age,title,description});game.history=game.history.slice(0,150);game.lastEvent=description;save()}
 function showToast(msg){const el=$('toast');el.textContent=msg;el.classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.add('hidden'),3500)}
 function startGame(name,city,trait){
@@ -111,7 +120,7 @@ function yearSummary(){const professional=jobInfo();let income=0,expense=0;
  if(game.age===16)logLine('Mais independência','Você já pode procurar seu primeiro emprego.');
  if(game.age===18)logLine('Maioridade','Você chegou aos 18 anos! Uma nova etapa de escolhas começou.');
  if(game.age===60)logLine('Novo capítulo','Uma vida inteira de histórias começa a ganhar novas perspectivas.');
- if(game.age>=65&&Math.random()<Math.min(.82,(game.age-63)*.015+(100-game.stats.saude)*.003)){game.alive=false;window.CaminhosDynasty?.recordDeath(game);logLine('O fim de uma jornada',`${game.name} partiu aos ${game.age} anos. Sua história continua nas lembranças de quem conheceu.`)}
+ if(game.alive&&game.age>=65&&Math.random()<Math.min(.82,(game.age-63)*.015+(100-game.stats.saude)*.003)){game.alive=false;window.CaminhosDynasty?.recordDeath(game);logLine('O fim de uma jornada',`${game.name} partiu aos ${game.age} anos. Sua história continua nas lembranças de quem conheceu.`)}
 }
 function offlineEvent(){const group=game.age<13?'crianca':game.age<18?'adolescente':game.age<60?'adulto':'idoso';const pick=choose(OFFLINE_EVENTS[group]);return {title:pick[0],story:pick[1],source:'offline',choices:pick[2].map(c=>({text:c[0],delta:c[1]}))}}
 function cleanAIDelta(obj){const clean={};if(!obj||typeof obj!=='object')return clean;for(const k of Object.keys(STAT_LABELS)){if(Number.isFinite(obj[k]))clean[k]=clamp(obj[k],-12,12)}if(Number.isFinite(obj.cash))clean.cash=clamp(obj.cash,-3500,3500);return clean}
@@ -121,13 +130,14 @@ async function aiEvent(){if(!config.enableAI||!config.endpoint)return null;const
  const response=await fetch(config.endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({age:game.age,trait:game.trait,stage:stage(),job:jobInfo()?.name||'Estudante ou sem emprego',stats:safeStats,city:game.city}),signal:ctl.signal});
  if(!response.ok)throw Error('HTTP '+response.status);const data=await response.json();return cleanAIEvent(data)
  }finally{clearTimeout(t)}}
-async function advance(){if(!game||!game.alive||loading)return;if(game.pendingEvent){showEvent();return}loading=true;game.age++;game.actions=3;window.CaminhosSkills?.ensure(game);window.CaminhosEveryday?.annual(game);yearSummary();save();render();if(!game.alive){loading=false;showEnd();return}if(game.age===18&&window.CaminhosPaths?.offerGraduation(game)){loading=false;window.CaminhosPaths.openGraduation(game);return}if(Math.random()<.75){let e=null;if(config.enableAI&&config.endpoint){showToast('Criando um novo acontecimento...');try{e=await aiEvent()}catch(err){showToast('IA indisponível. Usando história local.')}}if(!e)e=(Math.random()<.67?window.CaminhosEveryday?.randomEvent(game):null)||offlineEvent();game.pendingEvent=e;save();showEvent()}else{logLine('Mais um ano de vida','Você completou '+game.age+' '+(game.age===1?'ano':'anos')+' e segue construindo seu próprio caminho.')}loading=false;render()}
+async function advance(){if(!game||!game.alive||loading)return;if(game.pendingEvent){showEvent();return}loading=true;game.age++;game.actions=3;window.CaminhosSkills?.ensure(game);window.CaminhosEveryday?.annual(game);if(enforceHealthDeath()||!game.alive){save();render();loading=false;showEnd();return}yearSummary();save();render();if(!game.alive){loading=false;showEnd();return}if(game.age===18&&window.CaminhosPaths?.offerGraduation(game)){loading=false;window.CaminhosPaths.openGraduation(game);return}if(Math.random()<.75){let e=null;if(config.enableAI&&config.endpoint){showToast('Criando um novo acontecimento...');try{e=await aiEvent()}catch(err){showToast('IA indisponível. Usando história local.')}}if(!e)e=(Math.random()<.67?window.CaminhosEveryday?.randomEvent(game):null)||offlineEvent();game.pendingEvent=e;save();showEvent()}else{logLine('Mais um ano de vida','Você completou '+game.age+' '+(game.age===1?'ano':'anos')+' e segue construindo seu próprio caminho.')}loading=false;render()}
 function applyChoice(i){
  const event=game?.pendingEvent;if(!event)return;
  const choice=event.choices[i];if(!choice)return;
  game.pendingEvent=null;
  statChange(choice.delta);
  logLine(event.title,event.story+' Sua escolha: '+choice.text+'.');
+ if(!game.alive)return;
  if(event.source==='cotidiano'){
    const died=window.CaminhosEveryday?.applyChoice(game,choice);
    if(died){save();return}
