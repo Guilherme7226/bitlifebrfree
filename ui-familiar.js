@@ -153,22 +153,44 @@ document.addEventListener('click',event=>{
   if(!p)return;
   const portrait=window.CaminhosWorld?.portrait(p.name,p.role,p.id,true)||esc(p.emoji||'👤');
   const blocked=!game.alive||!!game.pendingEvent||game.extra?.prison>0;
+  const family=['Mãe','Pai','Padrasto','Madrasta','Avó','Avô','Irmão','Irmã','Filho','Filha','Cônjuge'].includes(p.role);
+  const cult=game.extra?.cult&&typeof game.extra.cult==='object';
   const socialActions=[
-   ['aproximar','💬 Conversar'],['passar-tempo','🫂 Passar tempo'],
-   ['elogiar','🌟 Elogiar'],['presente','🎁 Dar presente (R$ 180)'],
-   ['desculpas','🙏 Pedir desculpas'],['discutir','😠 Discutir'],
-   ['provocar','😒 Provocar'],['ignorar','🙈 Ignorar']
+   ...(family?[['pedir-dinheiro','💰','Pedir dinheiro','Peça ajuda financeira a '+p.name]]:[]),
+   ['elogiar','😘','Elogiar','Faça um elogio a '+p.name],
+   ['aproximar','💬','Conversa','Converse com '+p.name],
+   ...(game.age>=12?[['acordo','😎','Acordo','Venda um objeto pessoal a '+p.name]]:[]),
+   ['presente','🎁','Presentear','Dê um presente a '+p.name],
+   ['insultar','😡','Insultar','Ofenda '+p.name+' e arrisque o vínculo'],
+   ...(game.age>=6?[['cinema','🎭','Cinema','Assista a um filme com '+p.name]]:[]),
+   ...(cult?[['recrutar','🤝','Recrutar','Convide '+p.name+' para seu culto']]:[]),
+   ['passar-tempo','🕰️','Passar tempo','Passe um tempo com '+p.name],
+   ['espiar','👁️','Espiar','Observe '+p.name+' sem ser notado(a)'],
+   ['desculpas','🙏','Pedir desculpas','Tente recuperar a confiança'],
+   ['discutir','😠','Discutir','Tenha uma discussão com '+p.name],
+   ['provocar','😒','Provocar','Incomode '+p.name],
+   ['ignorar','🙈','Ignorar','Deixe de dar atenção']
   ];
-  const interactions='<div class="relationship-action-heading">Escolha uma interação</div>'+
-   '<div class="relationship-action-grid">'+socialActions.map(([act,label])=>
-    '<button type="button" class="'+(['discutir','provocar','ignorar'].includes(act)?'danger-button':'secondary-button')+
-    '" data-act="rel" data-id="'+Number(p.id)+'" data-option="'+act+'" '+(blocked?'disabled':'')+'>'+
-    label+'</button>').join('')+'</div>';
-  const partner=game.partnerId===p.id;
-  const marriage=partner&&p.role==='Namoro'?'<button type="button" class="secondary-button" data-act="rel" data-id="'+Number(p.id)+'" data-option="casar" '+(game.age<18?'disabled':'')+'>💍 Casar</button>':'';
-  const child=partner&&p.role==='Cônjuge'?'<button type="button" class="secondary-button" data-act="rel" data-id="'+Number(p.id)+'" data-option="filho">👶 Ter filho</button>':'';
-  const breakup=partner?'<button type="button" class="danger-button" data-act="rel" data-id="'+Number(p.id)+'" data-option="terminar">Terminar relação</button>':'';
-  showModal('<div class="retro-person-modal">'+portrait+'<div><div class="card-kicker">RELACIONAMENTO</div><h2 id="modalTitle">'+esc(p.name)+'</h2><p>'+esc(p.role)+' · Vínculo '+Math.round(p.bond)+'/100</p><p class="relationship-mood">'+((p.irritation||0)>=45?'😠 Está irritado(a)':(p.irritation||0)>=18?'😕 Está incomodado(a)':'🙂 Está tranquilo(a)')+'</p></div></div>'+interactions+'<div class="mini-buttons relationship-special-actions">'+marriage+child+breakup+'</div>');
+  const special=game.partnerId===p.id;
+  if(special&&p.role==='Namoro')socialActions.push(['casar','💍','Casar','Assuma um compromisso com '+p.name]);
+  if(special&&p.role==='Cônjuge')socialActions.push(['filho','👶','Ter filho','Planeje aumentar a família']);
+  if(special)socialActions.push(['terminar','💔','Terminar relação','Encerre o relacionamento']);
+  const heading='<div class="social-profile-header">'+
+   '<div class="retro-person-modal">'+portrait+'<div><div class="card-kicker">RELACIONAMENTO</div>'+
+   '<h2 id="modalTitle">'+esc(p.name)+'</h2>'+
+   '<p>'+esc(p.role)+' · Vínculo '+Math.round(p.bond)+'/100</p>'+
+   '<p class="relationship-mood">'+((p.irritation||0)>=45?'😠 Está irritado(a)':(p.irritation||0)>=18?'😕 Está incomodado(a)':'🙂 Está tranquilo(a)')+'</p></div></div></div>';
+  const interactions='<div class="social-menu-title">INTERAÇÕES</div>'+
+   '<div class="social-options">'+socialActions.map(([act,emoji,title,description])=>{
+    const danger=['insultar','discutir','provocar','ignorar','terminar','espiar'].includes(act);
+    const unavailable=blocked||(act==='casar'&&(game.age<18||p.bond<65))||(act==='filho'&&game.age<18);
+    return '<button type="button" class="social-option'+(danger?' is-negative':'')+
+     '" data-act="rel" data-id="'+Number(p.id)+'" data-option="'+act+'" '+(unavailable?'disabled':'')+'>'+
+     '<span class="social-option-icon">'+emoji+'</span>'+
+     '<span class="social-option-body"><strong>'+esc(title)+'</strong><small>'+esc(description)+'</small></span>'+
+     '<span class="social-option-more">•••</span></button>';
+   }).join('')+'</div>';
+  showModal('<div class="social-person-page">'+heading+interactions+'</div>');
  }
  if(event.target.closest('.retro-person-modal')?.dataset?.noAction)return;
 });
