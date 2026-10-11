@@ -159,4 +159,9 @@ assert.match(fs.readFileSync('index.html','utf8'),/theme-classic.css/,'tema clas
 assert.match(fs.readFileSync('index.html','utf8'),/ui-familiar.js/,'menus classicos incluidos');
 assert.match(fs.readFileSync('theme-classic.css','utf8'),/background:#23a642/,'idade em verde');
 assert.match(fs.readFileSync('theme-classic.css','utf8'),/retro-screen-bar/,'cabecalho das telas');
+const iosCss=fs.readFileSync('theme-classic.css','utf8');
+assert.match(iosCss,/height:calc\(64px \+ env\(safe-area-inset-top, 0px\)\)/,'cabeçalho respeita barra de status');
+assert.match(iosCss,/padding-top:env\(safe-area-inset-top, 0px\)/,'reserva vertical segura do iPhone');
+assert.match(iosCss,/top:calc\(159px \+ env\(safe-area-inset-top, 0px\)\)/,'título fixo não invade o cabeçalho');
+assert.match(fs.readFileSync('index.html','utf8'),/theme-classic\.css\?v=20261011-ios-safe-area/,'cache do iPhone atualizado');
 console.log('OK: escola, amigos, professores, bens, empresas, venda, salvamento e navegação.');
