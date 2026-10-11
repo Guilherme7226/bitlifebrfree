@@ -271,3 +271,68 @@ body{background:#e7edf3;color:#173e65;font-size:15px}
   scroll-padding-top:calc(226px + env(safe-area-inset-top, 0px));
  }
 }
+
+/* Atributos completos logo abaixo do personagem: evita que a lista longa do
+   diário empurre os status para trás da barra fixa do iPhone. */
+@media(max-width:700px){
+ .game>.stats-strip{
+  order:1;
+  position:relative;
+  z-index:1;
+  display:block;
+  width:100%;
+  height:auto;
+  margin:0;
+  padding:5px 8px 7px;
+  box-sizing:border-box;
+  background:#fff;
+  border-top:0;
+  border-bottom:1px solid #cbdbea;
+ }
+ .game>.body-grid{order:2;min-height:0;}
+ .stats-strip .retro-stats{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:5px 12px;
+  padding:6px 7px 5px;
+  background:#fff;
+ }
+ .stats-strip .retro-stat-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 36px;
+  grid-template-rows:auto 6px;
+  gap:3px 4px;
+  min-height:0;
+  min-width:0;
+  padding:2px 0;
+  align-items:center;
+ }
+ .stats-strip .retro-stat-name{
+  grid-column:1;
+  grid-row:1;
+  font-size:11px;
+  text-align:left;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+  line-height:16px;
+ }
+ .stats-strip .retro-stat-name>span{font-size:12px;padding-left:2px}
+ .stats-strip .retro-stat-value{
+  grid-column:2;
+  grid-row:1;
+  text-align:right;
+  font-size:11px;
+  line-height:16px;
+ }
+ .stats-strip .retro-stat-meter{
+  grid-column:1 / -1;
+  grid-row:2;
+  width:100%;
+  height:6px;
+  margin:0;
+  background:#dce8f1;
+  border-radius:4px;
+ }
+ .stats-strip .retro-stat-meter>span{border-radius:4px}
+}
