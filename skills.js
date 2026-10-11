@@ -80,7 +80,7 @@ function train(g,id){
  save();render();
  showToast('🎯 '+spec[2]+': '+result.level+'/100 · Talento natural '+result.talent+'%');
 }
-function render(g){
+function renderSkills(g){
  ensure(g);
  const tabs=[...new Set(LIB.map(s=>s[3]))];
  return '<div class="retro-screen-bar"><button class="retro-screen-close" data-go="atividades" aria-label="Voltar às atividades">×</button><strong>Habilidades</strong><span>✦</span></div>'+
@@ -99,5 +99,5 @@ document.addEventListener('click',ev=>{
  const b=ev.target.closest('[data-skill-train]');if(!b||typeof game==='undefined'||!game)return;
  train(game,b.dataset.skillTrain);
 });
-window.CaminhosSkills={ensure,talent,practice,score,train,render,library:LIB};
+window.CaminhosSkills={ensure,talent,practice,score,train,render:renderSkills,library:LIB};
 })();
