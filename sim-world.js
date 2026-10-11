@@ -153,7 +153,7 @@ function annual(g){
 function politicalRequirements(g,p){
  ensure(g);const e=g.extra,s=e.politics2;
  if(g.age<p.age)return 'Idade mínima: '+p.age+' anos';
- if(g.stats.carisma<p.stat)return 'Carisma necessário: '+p.stat;
+ if((e.reputation||30)<p.stat)return 'Popularidade necessária: '+p.stat;
  if(e.prison>0)return 'Não pode se candidatar enquanto preso';
  if(s.barredUntil>g.age)return 'Inelegível até '+s.barredUntil+' anos';
  if((e.record||0)>2)return 'Antecedentes impedem a candidatura';
@@ -168,7 +168,7 @@ function election(g,id){
  if(g.pendingEvent)return showEvent();
  if(!useExtraAction())return;
  const e=g.extra,s=e.politics2;g.cash-=p.cost;
- const chance=Math.min(.88,.18+g.stats.carisma*.0034+(e.reputation||30)*.0026+s.loyalty*.0017-(id==='presidente'?.25:id==='governador'?.15:0));
+ const chance=Math.min(.88,.18+g.stats.inteligencia*.0012+(e.reputation||30)*.005+s.loyalty*.0017-(id==='presidente'?.25:id==='governador'?.15:0));
  if(Math.random()<chance){
   e.office=id;e.officeYears=0;
   if(!s.experience.includes(id))s.experience.push(id);
@@ -189,7 +189,7 @@ function politicalDecision(g,action){
  if(!useExtraAction())return;
  if(action==='honest'){
   p.integrity=clamp100(p.integrity+12);p.loyalty=clamp100(p.loyalty+6);
-  e.reputation=clamp100(e.reputation+8);g.stats.disciplina=clamp100(g.stats.disciplina+4);
+  e.reputation=clamp100(e.reputation+8);g.stats.inteligencia=clamp100(g.stats.inteligencia+2);
   logLine('Gestão honesta','Você priorizou serviços públicos e transparência, elevando sua confiança pública.');
  }else if(action==='corrupt'){
   const loot=rand(6000,35000)*(POLITICS.findIndex(v=>v.id===e.office)+1);
@@ -205,7 +205,7 @@ function politicalDecision(g,action){
   logLine('Prestação de contas','Você apresentou seu trabalho publicamente. As suspeitas existentes não foram apagadas automaticamente.');
  }else if(action==='grassroots'){
   e.reputation=clamp100(e.reputation+rand(4,9));p.loyalty=clamp100(p.loyalty+rand(5,10));
-  g.stats.carisma=clamp100(g.stats.carisma+3);
+  g.stats.felicidade=clamp100(g.stats.felicidade+2);
   logLine('Campanha comunitária','Você ouviu moradores e se envolveu em ações comunitárias.');
  }
  save();render();
@@ -216,7 +216,7 @@ function renderPolitics(g){
  const rank=POLITICS.filter(x=>s.experience.includes(x.id)).map(x=>x.name);
  return displayTitle('🏛️ Carreira política','Avance de vereador a presidente, governe com integridade ou arrisque escândalos e prisão.')+
  '<div class="politics-hero"><div><small>CARGO ATUAL</small><strong>'+text(current?.name||'Nenhum mandato')+'</strong></div>'+
- '<div><small>REPUTAÇÃO</small><strong>'+(e.reputation||0)+'/100</strong></div>'+
+ '<div><small>POPULARIDADE</small><strong>'+(e.reputation||0)+'/100</strong></div>'+
  '<div><small>INTEGRIDADE</small><strong>'+s.integrity+'/100</strong></div>'+
  '<div><small>MANDATO</small><strong>'+(current?e.officeYears+'/4':'—')+'</strong></div></div>'+
  '<div class="card"><h3>Minha evolução</h3><p>'+text(rank.length?rank.join(' → '):'Ainda não foi eleito.')+'</p>'+
