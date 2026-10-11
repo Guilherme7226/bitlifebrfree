@@ -324,7 +324,7 @@ const beforeApology=code('game.people[0].irritation');
 code("relationAction(1,'desculpas')");
 assert.ok(code('game.people[0].irritation')<beforeApology,'apology reduces anger');
 assert.match(code("window.CaminhosUI.renderTab(game,'relacoes')"),/data-ui-person/,'relation cards keep profile interaction access');
-assert.match(fs.readFileSync('ui-familiar.js','utf8'),/data-option="\'+act/, 'UI offers social action choices');
+assert.match(fs.readFileSync('ui-familiar.js','utf8'),/socialActions=\[/, 'UI offers social action choices');
 assert.match(fs.readFileSync('ui-familiar.js','utf8'),/😠 Discutir|😒 Provocar/, 'UI offers negative social interactions');
 assert.match(fs.readFileSync('life-extras.js','utf8'),/relationAction\(Number\(relationship.id\),'aproximar'\)/,
  'talking with a schoolmate uses the same relationship interactions');
