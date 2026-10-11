@@ -464,4 +464,58 @@ assert.equal(code("game.people.find(p=>p.id==="+thirdClassmate+").friend"),false
 assert.ok(!code("window.CaminhosUI.renderTab(game,'relacoes')").includes(code("game.people.find(p=>p.id==="+thirdClassmate+").name")),
  'declined invitations remain outside Relationships');
 
+
+// Clubes escolares: participantes identificados, popularidade, eleicoes e lideranca.
+code("startGame('Teste Clubes','Santos, SP','curioso')");
+code("game.age=9;render()");
+const clubMenu=code("window.CaminhosExtras.renderSchool(game)");
+assert.match(clubMenu,/Clubes escolares/,'clubes ficam na tela da Escola');
+assert.match(clubMenu,/Clube de Ciências/,'mostra clube de ciencias');
+assert.match(clubMenu,/Clube Esportivo/,'mostra clube de esportes');
+assert.match(clubMenu,/Clube de Música/,'mostra clube de musica');
+assert.match(clubMenu,/data-life-extra="club" data-id="join"/,'entrar em um clube via escola');
+assert.ok(code("game.people.filter(p=>p.role==='Colega').length")>=10,'integrantes dos clubes tem nomes e perfil');
+click({lifeExtra:'club',id:'join',club:'debate'});
+assert.equal(code('game.extra.school.clubs.activeId'),'debate','entrou no clube de debate');
+assert.equal(code('game.extra.school.clubs.status'),'Integrante','comeca como integrante');
+const clubHTML=code('window.CaminhosExtras.renderSchool(game)');
+assert.match(clubHTML,/data-life-extra="club" data-id="practice"/,'praticar no clube');
+assert.match(clubHTML,/data-life-extra="club" data-id="organize"/,'organizar evento');
+assert.match(clubHTML,/data-life-extra="club" data-id="campaign"/,'buscar apoio na lideranca');
+assert.match(clubHTML,/data-life-extra="club" data-id="leader"/,'votar em novo lider');
+assert.match(clubHTML,/Alunos do clube/,'clube apresenta alunos do grupo');
+assert.match(clubHTML,/data-ui-person="\d+"/,'alunos permitem perfil e interacoes gerais');
+const clubMemberId=code('game.extra.school.clubs.list.find(c=>c.id==="debate").members[0]');
+code("window.CaminhosUI.openPerson(game,"+clubMemberId+")");
+assert.match(code("document.getElementById('modalContent').innerHTML"),/data-option="pedir-amizade"/,
+ 'membros do clube podem receber convite de amizade');
+const clubPopularStart=code('game.extra.school.clubs.popularity');
+click({lifeExtra:'club',id:'practice'});
+assert.ok(code('game.extra.school.clubs.popularity')>=clubPopularStart,
+ 'participar do clube aumenta popularidade');
+assert.equal(code('game.extra.school.clubs.participation'),1,'primeira participacao registrada');
+for(let i=0;i<5;i++)click({lifeExtra:'club',id:'help'});
+assert.equal(code('game.extra.school.clubs.participation'),6,'acoes de clube ilimitadas por ano');
+assert.ok(['Integrante','Coordenador(a)'].includes(code('game.extra.school.clubs.status')),
+ 'deve evoluir cargo inicialmente');
+code('game.extra.school.clubs.popularity=85');
+code("game.extra.school.clubs.list.find(c=>c.id==='debate').members.forEach(mid=>{const person=game.people.find(p=>p.id===mid);person.bond=90})");
+click({lifeExtra:'club',id:'campaign'});
+assert.match(code("document.getElementById('modalContent').innerHTML"),/liderança|candidatura|apoio/i,
+ 'campanha gera popup narrativo');
+code('game.extra.school.clubs.popularity=90');
+code("{const prior=Math.random;Math.random=()=>0;try{window.CaminhosExtras.schoolClubAction(game,'leader')}finally{Math.random=prior}}");
+assert.equal(code('game.extra.school.clubs.status'),'Líder','eleicao pode levar ao posto de lider');
+assert.ok(code('game.extra.school.clubs.prestige')>=18,'lideranca influencia prestigio do clube');
+assert.match(code("document.getElementById('modalContent').innerHTML"),/eleito.*líder/i,
+ 'popup confirma eleicao');
+assert.match(storage.getItem('caminhos.save.v1'),/"status":"Líder"/,
+ 'status no clube salvo permanentemente');
+const unknownClubName=code('game.people.find(p=>p.id==='+clubMemberId+').name');
+assert.ok(!code("window.CaminhosUI.renderTab(game,'relacoes')").includes(unknownClubName),
+ 'ser integrante de um clube nao cria amizade automaticamente');
+code('game.age=18;window.CaminhosExtras.annual(game);render()');
+assert.match(code('window.CaminhosExtras.renderSchool(game)'),/Alunos do clube/,
+ 'historico do clube permanece visivel apos a formatura');
+
 console.log('OK: escola, amigos, professores, bens, empresas, venda, salvamento e navegação.');
