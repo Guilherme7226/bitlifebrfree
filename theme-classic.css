@@ -516,3 +516,22 @@ body{background:#e7edf3;color:#173e65;font-size:15px}
  .social-option-body small{font-size:12px}
  .social-menu-title{font-size:16px}
 }
+
+/* Escolha de golpes ficticios nas interacoes sociais */
+.combat-dialog{text-align:center;color:#174e7c;padding:5px 0 10px}
+.combat-dialog-icon{font-size:42px;margin:6px auto 9px}
+.combat-dialog h2{font-size:21px;margin:9px 0 14px;color:#0c5e9a}
+.combat-dialog>p{font-size:13px;line-height:1.5;margin:8px 0 17px;color:#52728c}
+.combat-divider{padding:11px 14px;background:#086099;color:#fff;text-align:left;font-weight:800;font-size:13px;margin:10px -5px 0}
+.combat-options{display:flex;flex-direction:column;max-height:47dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;border-bottom:1px solid #bad0df}
+.combat-option{display:flex;align-items:center;text-align:left;gap:10px;border:0;border-bottom:1px solid #cad8e2;border-radius:0;background:#fff;color:#115c94;width:100%;min-height:64px;padding:8px 11px;cursor:pointer}
+.combat-option:active{background:#edf8ff}
+.combat-option-emoji{font-size:25px;flex:0 0 33px}
+.combat-option>span:nth-child(2){display:flex;flex:1;min-width:0;flex-direction:column;gap:3px}
+.combat-option strong{font-size:15px;font-weight:800}
+.combat-option small{color:#6b8193;font-size:11px;line-height:1.35}
+.combat-option-next{font-size:23px;font-weight:700}
+.combat-hint{margin:13px 10px!important;background:#f0f8ff;border:1px solid #b9d5e6;padding:12px;border-radius:7px}
+.combat-cancel{margin-top:13px;min-width:100%;min-height:46px}
+.martial-move-status{font-size:12px;color:#14629c;font-weight:700}
+@media(max-width:700px){.combat-dialog h2{font-size:19px}.combat-option{min-height:60px}.combat-dialog>p{font-size:12px}}
