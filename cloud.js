@@ -6,7 +6,7 @@ const conf=window.CAMINHOS_CLOUD_CONFIG||{};
 const ready=!!(conf.url&&conf.publishableKey&&/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(conf.url));
 const META_PREFIX='caminhos.cloud.synced.';
 let client=null,session=null,connectedPromise=null,bootPromise=null;
-let sync=false,knownUpdated=null,busy=false,timer=null,remote=null,state='local';
+let sync=false,knownUpdated=null,busy=false,timer=null,remote=null,state='local',resetting=false,resetEpoch=0;
 const line=e=>String(e?.message||e||'Falha desconhecida').slice(0,180);
 const html=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const feedback=m=>{if(typeof showToast==='function')showToast(m)};
@@ -89,16 +89,16 @@ function restoreRow(row){
  if(!isSame(game,row.data))queueSave(game);
 }
 async function bootstrap(){
- if(!canSync())return;
+ if(!canSync()||resetting)return;
  if(bootPromise)return bootPromise;
  bootPromise=(async()=>{
-   const userId=session.user.id;
+   const userId=session.user.id,epoch=resetEpoch;
    sync=false;
    indicator('checking','Verificando nuvem…');
    try{
      if(!client)await connect();
      const row=await readRemote();
-     if(!canSync()||session.user.id!==userId)return;
+     if(!canSync()||session.user.id!==userId||epoch!==resetEpoch||resetting)return;
      const local=getLocal(), meta=getMeta(userId);
      knownUpdated=row?.updated_at||null;
      if(!row){
@@ -146,7 +146,7 @@ async function bootstrap(){
  try{return await bootPromise}finally{bootPromise=null}
 }
 async function writeSnapshot({manual=false,override=false}={}){
- if(!canSync())return false;
+ if(!canSync()||resetting)return false;
  if(!getLocal())return feedback('Crie uma vida antes de salvar.'),false;
  if(busy){
    if(!manual)queueSave(getLocal());
@@ -211,7 +211,7 @@ async function writeSnapshot({manual=false,override=false}={}){
  }finally{busy=false}
 }
 function queueSave(g){
- if(!g)return;
+ if(!g||resetting)return;
  if(!canSync()){localIndicator();return}
  if(!sync){if(state!=='conflict'&&state!=='error'&&state!=='checking')indicator('local','Salvo no aparelho');return}
  indicator('pending','Aguardando nuvem…');
@@ -275,6 +275,42 @@ async function login(provider){
    if(error)throw error;
  }catch(e){feedback('Não foi possível entrar: '+line(e))}
 }
+// Apaga a vida atual deste aparelho e, caso a conta esteja conectada,
+ // tambem remove a copia deste usuario em public.game_saves.
+ // So libera o reset local depois da confirmacao do servidor.
+async function resetLife(){
+ if(busy||resetting){
+   feedback('Espere a sincronização terminar antes de recomeçar.');
+   return false;
+ }
+ try{
+   if(ready&&!client)await connect();
+ }catch(err){
+   feedback('Não foi possível verificar sua conta. Reset cancelado para proteger o backup: '+line(err));
+   return false;
+ }
+ const signed=canSync(),oldSync=sync,oldState=state;
+ resetting=true;resetEpoch++;clearTimeout(timer);sync=false;
+ try{
+   if(signed){
+     const uid=session.user.id;
+     const {error}=await client.from('game_saves')
+       .delete().eq('user_id',uid);
+     if(error)throw error;
+     if(!session||session.user.id!==uid)throw Error('A conta mudou durante o reset; recarregue a página.');
+     try{localStorage.removeItem(META_PREFIX+uid)}catch{}
+   }
+   knownUpdated=null;remote=null;bootPromise=null;
+   sync=signed;
+   indicator('local','Pronto para uma nova vida');
+   return true;
+ }catch(err){
+   sync=oldSync;
+   indicator(oldState==='saved'?'saved':'error','Não foi possível recomeçar');
+   feedback('Reset cancelado: '+line(err));
+   return false;
+ }finally{resetting=false}
+}
 async function signout(){
  if(!client)return;
  const {error}=await client.auth.signOut();
@@ -320,7 +356,7 @@ document.addEventListener('click',ev=>{
 });
 window.addEventListener('online',()=>{if(canSync()&&sync&&getLocal())queueSave(getLocal());});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&canSync()&&!sync&&state==='error')bootstrap().catch(()=>{});});
-window.CaminhosCloud={open,queueSave,configured:ready,manualSave,getStatus:()=>state};
+window.CaminhosCloud={open,queueSave,configured:ready,manualSave,resetLife,getStatus:()=>state};
 if(ready)connect().catch(e=>{indicator('error','Nuvem indisponível');feedback('Falha ao conectar: '+line(e))});
 else localIndicator();
 })();
