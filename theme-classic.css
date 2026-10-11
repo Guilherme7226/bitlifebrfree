@@ -1,0 +1,236 @@
+/* CAMINHOS — interface clara, retrô e mobile-first, inspirada na ergonomia de simuladores de vida.
+   Identidade independente: cores, textos, retratos e marca CAMINHOS. */
+:root{
+ color-scheme:light;
+ --bg:#e7edf3;--surface:#fff;--surface2:#f0f4f8;--border:#cdd8e6;
+ --text:#1c3f63;--muted:#6a7b8d;--accent:#087aab;--blue:#145e97;
+ --mint:#29a64a;--gold:#e6ba3b;--radius:8px;
+ font-family:Arial,Helvetica,ui-sans-serif,sans-serif;
+}
+html{background:#e6ecf2}
+body{background:#e7edf3;color:#173e65;font-size:15px}
+.app-shell{max-width:1260px;background:#fff}
+.game{padding-top:0}
+.topbar{background:#101216;border:none;color:white;padding:0 15px;border-bottom:2px solid #2b3747}
+.brand{color:#f3f5f9;font-size:26px;letter-spacing:.4px;font-weight:950}
+.brand-mark{color:#f1c13f}
+.brand-dot{color:#f1c13f}
+.brand small{color:#c7d8e5;letter-spacing:1.5px}
+.top-right{gap:10px}
+.icon-button{background:#141923;border:2px solid #e1e6ee;border-radius:50%;color:#fff;width:43px;height:43px}
+.quick-save{background:#288b57;border-color:#3daa6b;color:#fff;border-radius:9px}
+.quick-save:hover,.quick-save:focus-visible{background:#187846}
+.online{color:#b7c9d6}
+.profile-banner{background:#e6edf4;box-shadow:none;border:0;border-bottom:2px solid #145f9c;border-radius:0;color:#14578f}
+.profile-avatar{border:0;border-radius:50%;background:#dbe7f3;width:74px;height:74px}
+.profile-avatar .character-portrait{border-radius:50%;box-shadow:none}
+.profile-heading h1{color:#0862a4;font-size:24px;margin:2px 0 1px}
+.profile-sub{color:#175e99;font-size:13px}
+.profile-money small{color:#527491;font-size:10px;letter-spacing:0}
+.profile-money strong{color:#0064a9;font-size:25px}
+.profile-money span{color:#3b6c91}
+.eyebrow{color:#23618c;font-size:9px;letter-spacing:1px}
+.profile-home{background:#d7e9fc;color:#0c659e;border:1px solid #b5d4ed;border-radius:8px}
+.profile-home:hover{background:#c8e0f9}
+.stats-strip{display:block;background:#fff;border:1px solid #d5e0ea;margin:15px 0 22px}
+.retro-stats{display:grid;gap:9px;padding:15px 18px;background:#fff}
+.retro-stat-row{display:grid;grid-template-columns:minmax(125px,160px) 1fr 52px;align-items:center;column-gap:9px;min-height:28px}
+.retro-stat-name{font-size:13px;font-weight:800;color:#07609b;text-align:right;white-space:nowrap}
+.retro-stat-name>span{font-size:17px;padding-left:4px}
+.retro-stat-meter{height:18px;background:#d9e5ef;position:relative;overflow:hidden;border-radius:0}
+.retro-stat-meter>span{display:block;height:100%;transition:width .28s;background:#26a749}
+.retro-stat-meter>span.retro-low{background:#f58021}
+.retro-stat-value{font-size:15px;font-weight:900;color:#075e9c;text-align:right;white-space:nowrap}
+.body-grid{grid-template-columns:205px minmax(0,1fr) 190px;gap:16px}
+.nav-list{gap:2px}
+.tab{color:#2c5e87;padding:13px;border-radius:7px}
+.tab.active,.tab:hover{background:#d3e7fb;color:#075b96;border-color:#a9cde9}
+.sidebar-quote{color:#617f9a;border-top:1px solid #c6d7e7}
+.sidebar-quote span{color:#8d9db0}
+.desktop-help-link{color:#27658d}
+.content-panel{background:#fff;border:1px solid #d1dce8;min-width:0;padding:0 0 16px;border-radius:5px;overflow:hidden}
+.card,.asset-tile,.school-person,.service-card,.martial-overview,.politics-hero,.world-card,.pet-card,.public-job,.martial-card{background:#fff!important;color:#1e476d;border:1px solid #d2dfed;border-radius:8px}
+.card p,.world-card p,.pet-card p,.public-job p,.service-card p,.martial-card p{color:#65798e}
+.card h3,.world-card h3,.pet-details h3,.asset-tile-head strong,.school-person strong,.public-header strong,.martial-head strong{color:#145a96}
+.section-title{color:#18588d;font-size:15px}
+.section-title small{color:#7d91a8}
+.panel-title{color:#105e98;font-size:22px}
+.panel-subtitle{color:#698199;font-size:13px}
+.secondary-button{background:#eaf3fc;color:#0f5a93;border-color:#b8d6ed;border-radius:6px}
+.secondary-button:hover{background:#d7eafa;border-color:#75b5e5}
+.danger-button{background:#ffebeb;border-color:#eaa9ae;color:#ae303c}
+.tag{background:#e8efff;color:#3961a7;border-color:#c3d3e9}
+.tag.green{background:#e3f5e7;color:#1e7a4f;border-color:#b4e5c5}
+.highlight-number{color:#136e9f}
+.notice{background:#f0f7fe;color:#2c5f85;border:1px solid #c9dceb;border-radius:7px}
+.choice{background:#f4faff;color:#1c5a8f;border-color:#d1e2f0;border-radius:9px}
+.choice:hover{background:#e5f1fc}
+.action-card{background:#fff;color:#16619b;border-color:#d3deea;border-radius:9px}
+.action-name{color:#075e9c}
+.action-desc{color:#6c8ca7}
+.year-card{background:#fff;border:1px solid #c8d9ea;border-radius:8px;color:#155e97}
+.year-card .primary-button{background:#259f3b;color:white;border-radius:9px}
+.year-card p{color:#66839b}
+.year-card .card-kicker{color:#3874a5}
+.year-progress>span,.year-number span{color:#4e84ad}
+.ap-dots b{background:#d8e3f0}.ap-dots b.full{background:#2ba84a}
+.mini-story,.tip-box{background:#fff;color:#2c678f;border-color:#d6e3ef}
+.modal-overlay{background:#0a1724ad;backdrop-filter:blur(3px)}
+.modal{background:#fff;border:1px solid #aac6db;color:#173f6a;border-radius:15px}
+.modal p{color:#647b94}
+.modal h2{color:#0b5d99}
+.modal-close{background:#0c5d98;color:#fff}
+.toast{background:#1f4e75;color:white}
+.app-footer{background:#e7edf4;color:#5a7992}
+.retro-screen-bar{background:#0b5792;color:white;display:grid;grid-template-columns:49px 1fr 35px;align-items:center;min-height:67px;padding:8px 15px;gap:9px}
+.retro-screen-bar>strong{text-align:center;font-size:23px;font-weight:950;letter-spacing:.35px;text-transform:uppercase}
+.retro-screen-bar>span{color:#63b9ed;text-align:center;font-size:19px}
+.retro-screen-close{width:43px;height:43px;border:3px solid white;border-radius:50%;background:transparent;color:white;font-size:30px;line-height:1;display:grid;place-items:center}
+.retro-section-title{min-height:29px;padding:5px 10px;background:#7d8086;color:white;font-size:14px;letter-spacing:.1px;text-align:center;font-weight:850;display:grid;place-items:center}
+.retro-menu-row,.retro-person-row{display:flex;align-items:center;min-height:93px;padding:15px 16px;border:0;border-bottom:1px solid #8caac8;background:#fff;color:#095d99;text-align:left;width:100%;gap:15px;cursor:pointer}
+.retro-menu-row:hover:not(:disabled),.retro-person-row:hover{background:#eef7ff}
+.retro-menu-row:active:not(:disabled),.retro-person-row:active{background:#d9eefe}
+.retro-row-symbol{display:grid;place-items:center;min-width:44px;width:44px;height:48px;font-size:31px;line-height:1}
+.retro-row-copy{min-width:0;display:flex;flex-direction:column;gap:3px;flex:1}
+.retro-row-copy strong{font-size:18px;line-height:1.25;color:#075c9b;font-weight:850}
+.retro-row-copy>span{font-size:13px;color:#2476ab;line-height:1.3}
+.retro-row-end{font-size:38px;font-weight:350;color:#366c91;line-height:1;flex-shrink:0}
+.retro-disabled{opacity:.45;cursor:default}
+.retro-disabled .retro-row-copy strong,.retro-disabled .retro-row-copy>span{color:#777c83}
+.retro-person-row{min-height:102px;gap:12px}
+.retro-person-portrait{width:61px;height:61px;flex:none;display:grid;place-items:center}
+.retro-person-portrait svg{width:61px;height:61px;border-radius:12px}
+.retro-person-copy{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0;font-size:15px}
+.retro-person-copy>span:first-child{overflow-wrap:anywhere}
+.retro-person-copy strong{color:#085d9b;font-size:18px}
+.retro-person-copy>span:first-child>span{color:#1b6da1}
+.retro-bond-caption{color:#1b6da1;font-size:12px;display:flex;align-items:center;gap:8px}
+.retro-relationship-track{height:8px;background:#dce5ed;width:95px;max-width:38%;display:inline-block}
+.retro-relationship-track span{height:100%;display:block;background:#23a547}
+.retro-person-modal{display:flex;align-items:center;gap:16px;padding:16px 0}
+.retro-person-modal svg{border-radius:16px;flex:none}
+.retro-person-modal p{margin:4px 0}
+.retro-diary{padding:17px 19px 20px;background:white;color:#727272;min-height:360px}
+.retro-diary-age{color:#09649e;font-weight:900;font-size:17px;margin-top:22px;margin-bottom:6px}
+.retro-diary-age:first-child{margin-top:0}
+.retro-diary-line{font-size:16px;color:#6d7075;line-height:1.5;margin:0 0 4px;overflow-wrap:anywhere}
+.retro-diary-notice{border:1px solid #96bde0;background:#edf8ff;color:#075a99;border-radius:7px;display:grid;gap:8px;padding:12px;margin-bottom:17px}
+.retro-diary-actions{padding-top:17px;display:flex;justify-content:center}
+.retro-stats .stat-fill{background:#2ca94e}
+.game:has(#tabContent .retro-diary) .content-panel{border-color:#e7edf3}
+.assets-intro{background:#e6f1fc;color:#115e9a;border-color:#bbd9ed}
+.assets-intro h3{color:#125d99}
+.assets-intro p{color:#5c7994}
+.asset-wealth{color:#156a9e}
+.asset-tile.owned{background:#effaf2!important}
+.asset-tile p,.asset-tile-head small{color:#667d91}
+.asset-counters span{border-color:#c7dced;color:#27658d}
+.asset-filters button{background:#e9f3ff;color:#145e97;border-color:#a7cbe6}
+.asset-filters button.active{background:#0c65a1;color:white}
+.school-top strong,.school-metrics strong{color:#125e93}
+.school-metrics>div{background:#eff5fb;border-color:#c8d9ed}
+.school-metrics small,.school-person small{color:#64809d}
+.school-actions button{background:#eaf4fd;color:#16629e}
+.public-requirement,.world-card small{color:#b35f30}
+.pet-bars{color:#5c829f}
+.politics-hero strong{color:#175a95}
+.politics-hero small{color:#647f9a}
+.graduation-options button{background:#eff8ff;border-color:#b9d4e9;color:#115f97}
+.graduation-options small{color:#5c7994}
+.future-choice{background:#e7f4ff}
+.mobile-dock{background:#07558f}
+@media(max-width:960px) and (min-width:701px){
+ .body-grid{grid-template-columns:160px minmax(0,1fr)}
+ .rightbar{display:none}
+}
+@media(max-width:700px){
+ html{background:#fff;scroll-padding-top:190px;scroll-padding-bottom:115px}
+ body{background:#fff}
+ .app-shell{width:100%;max-width:none;padding:0 0 calc(114px + env(safe-area-inset-bottom));min-width:0}
+ .topbar{height:64px;padding:0 11px;position:sticky;top:0;z-index:65;background:#111316;backdrop-filter:none;border:0}
+ .topbar .nav-toggle{display:grid!important;place-items:center;flex-shrink:0;background:#11151b;border:2px solid white;font-size:22px;border-radius:50%;width:39px;height:39px}
+ .topbar .nav-toggle.hidden{display:none!important}
+ .brand{font-size:18px;letter-spacing:-.2px;gap:5px;flex:1;min-width:0;white-space:nowrap}
+ .brand small{display:none}
+ .brand .brand-mark{font-size:24px}
+ .top-right{gap:6px}
+ .topbar .icon-button{width:35px;height:35px;font-size:16px}
+ .quick-save{min-height:36px;font-size:11px;padding:7px 9px;border-radius:8px}
+ .game{display:flex;flex-direction:column;padding:0;gap:0}
+ .profile-banner{order:0;position:sticky;top:64px;z-index:54;display:flex;flex-wrap:nowrap;gap:9px;padding:9px 11px;margin:0;min-height:95px;background:#e7edf4;border-bottom:2px solid #0f5d99;box-shadow:0 1px 0 #d5e0eb}
+ .profile-avatar{width:54px;height:54px;border-radius:50%;flex-shrink:0;background:#dbe5ee}
+ .profile-heading{min-width:0;flex:1}
+ .profile-heading h1{font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0;color:#075e9e}
+ .profile-home{font-size:10px;padding:2px 5px;margin-bottom:2px;background:#d1e4f8}
+ .profile-home span{display:inline!important}
+ .profile-heading .eyebrow{display:none}
+ .profile-sub{display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:10px;color:#11679f}
+ .profile-sub .dot-separator{display:none}
+ .profile-sub .profile-actions{display:none}
+ .profile-money{margin:0;padding:0;border:0;width:auto;max-width:92px;min-width:64px;text-align:right;flex:0 0 auto}
+ .profile-money small{display:none}
+ .profile-money strong{font-size:20px;margin:0;overflow-wrap:anywhere;line-height:1.18}
+ .profile-money #savingsLabel{display:none}
+ .profile-money #saveStatus{font-size:9px;line-height:1.2;color:#126397;display:block;margin:3px 0 0;max-width:89px;text-align:right}
+ .stats-strip{order:2;display:block;margin:0;border:0;border-top:1px solid #d5e0eb;padding:8px 0 12px;width:100%;background:#fff}
+ .retro-stats{gap:8px;padding:12px 13px}
+ .retro-stat-row{grid-template-columns:minmax(107px,31%) minmax(0,1fr) 43px;gap:7px;min-height:30px}
+ .retro-stat-name{font-size:12px}
+ .retro-stat-name>span{font-size:16px;padding-left:2px}
+ .retro-stat-meter{height:18px}
+ .retro-stat-value{font-size:14px}
+ .body-grid{order:1;display:block;margin:0;min-height:0}
+ .sidebar{display:none}
+ .rightbar{display:none}
+ .content-panel{border:0;border-radius:0;margin:0;padding:0;min-height:280px;width:100%;background:#fff;overflow:visible}
+ .retro-screen-bar{position:sticky;top:159px;z-index:45;min-height:63px;grid-template-columns:44px 1fr 35px;padding:8px 11px;gap:3px;background:#095b9c}
+ .retro-screen-bar>strong{font-size:20px}
+ .retro-screen-close{width:39px;height:39px;border-width:2.5px;font-size:27px}
+ .retro-section-title{min-height:27px;font-size:13px}
+ .retro-menu-row{min-height:86px;padding:11px 13px;gap:11px}
+ .retro-row-symbol{width:43px;min-width:43px;font-size:28px}
+ .retro-row-copy strong{font-size:17px}
+ .retro-row-copy>span{font-size:13px}
+ .retro-row-end{font-size:35px}
+ .retro-person-row{padding:12px 12px;min-height:95px;gap:10px}
+ .retro-person-portrait{width:50px;height:50px}
+ .retro-person-portrait svg{width:50px;height:50px}
+ .retro-person-copy strong{font-size:16px}
+ .retro-person-copy{font-size:13px}
+ .retro-relationship-track{width:82px}
+ .retro-diary{padding:14px 13px 17px;min-height:280px}
+ .retro-diary-age{font-size:15px;margin-top:15px}
+ .retro-diary-line{font-size:15px;line-height:1.43;margin:0 0 3px}
+ .mobile-dock{display:grid;grid-template-columns:repeat(2,minmax(0,1fr)) 1.3fr repeat(3,minmax(0,1fr));bottom:0;left:0;right:0;z-index:75;background:#07558f;border:0;border-top:2px solid #0b477c;box-shadow:0 -4px 13px #2b384744;align-items:stretch;padding:6px 4px calc(7px + env(safe-area-inset-bottom));gap:0;backdrop-filter:none}
+ .mobile-dock button{font-size:10px;color:#fff;min-height:60px;font-weight:700;padding:2px 0;gap:3px;line-height:1.12}
+ .mobile-dock button span{display:grid;place-items:center;width:34px;height:34px;background:#0bd5d4;border-radius:50%;font-size:21px;margin:0 auto;color:#fff}
+ .mobile-dock button.active{background:#1676b5}
+ .mobile-dock button[data-dock="more"] span{font-size:23px;font-weight:800}
+ .mobile-dock .dock-plus{position:relative;z-index:2;font-size:11px;color:white}
+ .mobile-dock .dock-plus span{width:79px;height:79px;margin:-40px auto -7px;display:grid;place-items:center;border:5px solid white;border-radius:50%;background:#23a642;color:#fff;font-size:48px;font-weight:700;box-shadow:0 0 0 3px #269c48,0 3px 12px #132e4e66}
+ .mobile-dock button:not(.dock-plus):active span{background:#05a9b6}
+ .modal-overlay{padding:0;align-items:end;z-index:100}
+ .modal{border-radius:15px 15px 0 0;background:#fff;color:#245b87;max-height:88dvh;overflow:auto}
+ .toast{bottom:calc(107px + env(safe-area-inset-bottom));max-width:95%;z-index:121}
+ .app-footer{display:none}
+ .retro-diary-actions button{max-width:90%}
+ .retro-screen-bar + .retro-section-title{margin:0}
+ .card,.notice,.assets-intro{margin:12px 12px}
+ .panel-title,.panel-subtitle{margin-left:12px;margin-right:12px}
+ .asset-grid,.martial-grid,.world-card-grid,.pet-grid,.school-list,.public-jobs,.school-actions{padding:0 12px}
+ .asset-filters{padding:0 12px}
+ .assets-intro{padding:15px}
+ .school-metrics strong{color:#085e99}
+ .school-person{border-radius:8px}
+}
+@media(max-width:360px){
+ .brand{font-size:16px}
+ .topbar .top-right{gap:4px}
+ .quick-save{font-size:10px;padding:7px 6px}
+ .retro-row-copy strong{font-size:15px}
+ .mobile-dock button{font-size:9px}
+ .mobile-dock button span{width:31px;height:31px;font-size:18px}
+ .mobile-dock .dock-plus span{width:70px;height:70px;font-size:41px}
+ .retro-stat-row{grid-template-columns:minmax(98px,31%) minmax(0,1fr) 38px}
+ .retro-stat-name{font-size:11px}
+}
