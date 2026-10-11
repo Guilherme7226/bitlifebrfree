@@ -83,11 +83,13 @@ function peopleGroup(g,entries,title){
 }
 function renderRelationships(g){
  const people=g.people||[];
+ const familyRoles=['Mãe','Pai','Padrasto','Madrasta','Avó','Avô','Irmão','Irmã','Filho','Filha','Cônjuge'];
+ const romanticRoles=['Namoro','Ex-relacionamento'];
  let out=screen('Relacionamentos');
- out+=peopleGroup(g,people.filter(p=>['Mãe','Pai','Padrasto','Madrasta','Filho','Filha','Cônjuge'].includes(p.role)),'Família');
- out+=peopleGroup(g,people.filter(p=>['Colega','Amizade','Namoro','Ex-relacionamento'].includes(p.role)),'Amigos e afetos');
- out+=peopleGroup(g,people.filter(p=>p.role?.includes('Professor')),'Professores');
- out+=peopleGroup(g,people.filter(p=>!['Mãe','Pai','Padrasto','Madrasta','Filho','Filha','Cônjuge','Colega','Amizade','Namoro','Ex-relacionamento'].includes(p.role)&&!p.role?.includes('Professor')),'Outras pessoas');
+ out+=peopleGroup(g,people.filter(p=>familyRoles.includes(p.role)),'Família');
+ out+=peopleGroup(g,people.filter(p=>p.friend===true&&!familyRoles.includes(p.role)&&!romanticRoles.includes(p.role)),'Amigos');
+ out+=peopleGroup(g,people.filter(p=>romanticRoles.includes(p.role)),'Relacionamentos amorosos');
+ out+='<div class="notice">Colegas e professores aparecem aqui somente depois que a amizade é aceita. Para conversar e pedir amizade, vá em Escola.</div>';
  out+=separator('Animais de estimação');
  const pets=g.extra?.pets||[];
  for(const pet of pets){
@@ -172,6 +174,11 @@ document.addEventListener('click',event=>{
    ['provocar','😒','Provocar','Incomode '+p.name],
    ['ignorar','🙈','Ignorar','Deixe de dar atenção']
   ];
+  const friendEligible=!family&&!['Namoro','Cônjuge','Ex-relacionamento'].includes(p.role);
+  if(friendEligible&&!p.friend){
+   socialActions.unshift(['pedir-amizade','🤝','Pedir amizade',
+    p.bond>=65?'Convide '+p.name+' para ser seu amigo(a)':'Necessário vínculo de 65/100 (atual: '+Math.round(p.bond)+')']);
+  }
   const special=game.partnerId===p.id;
   if(special&&p.role==='Namoro')socialActions.push(['casar','💍','Casar','Assuma um compromisso com '+p.name]);
   if(special&&p.role==='Cônjuge')socialActions.push(['filho','👶','Ter filho','Planeje aumentar a família']);
@@ -184,7 +191,7 @@ document.addEventListener('click',event=>{
   const interactions='<div class="social-menu-title">INTERAÇÕES</div>'+
    '<div class="social-options">'+socialActions.map(([act,emoji,title,description])=>{
     const danger=['insultar','agredir','discutir','provocar','ignorar','terminar','espiar'].includes(act);
-    const unavailable=blocked||(act==='casar'&&(game.age<18||p.bond<65))||(act==='filho'&&game.age<18);
+    const unavailable=blocked||(act==='pedir-amizade'&&p.bond<65)||(act==='casar'&&(game.age<18||p.bond<65))||(act==='filho'&&game.age<18);
     return '<button type="button" class="social-option'+(danger?' is-negative':'')+
      '" data-act="rel" data-id="'+Number(p.id)+'" data-option="'+act+'" '+(unavailable?'disabled':'')+'>'+
      '<span class="social-option-icon">'+emoji+'</span>'+
