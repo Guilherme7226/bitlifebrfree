@@ -161,7 +161,7 @@ function execute(g,id){
 }
 function renderMenu(g){
  ensure(g);
- let html='<div class="notice" style="margin:10px 12px"><strong>🍀 Sorte: '+(g.extra?.luck??50)+'%</strong><p>Atividades comuns e treinos podem ser repetidos sem limite anual. Talento e dedicação afetam seu desenvolvimento; situações arriscadas podem causar acidentes.</p></div>';
+ let html='<div class="notice" style="margin:10px 12px"><strong>Atividades e escolhas</strong><p>Treine e pratique atividades comuns quantas vezes quiser. Talento e dedicação influenciam o desenvolvimento, enquanto algumas decisões podem trazer riscos.</p></div>';
  const groups=[
   {name:'Lazer',sub:'Passeios, descanso e diversão',ids:['cinema','ferias','balada','parque','restaurante','viagem']},
   {name:'Habilidades',sub:'Estudo, instrumentos, esportes e bem-estar',ids:['habilidades','artes-marciais','leitura','academia','meditacao','voluntariado']},
