@@ -132,7 +132,7 @@ function worth(a,g){
  return Math.max(p[4]*.13,Math.round(p[4]*Math.pow(1+p[6],years)));
 }
 function renderSchool(g){
- ensure(g);const s=g.extra.school, schoolPeople=g.people.filter(p=>['Colega','Professor(a)','Ex-professor(a)'].includes(p.role));
+ ensure(g);const s=g.extra.school, schoolPeople=g.people.filter(p=>['Colega','Amizade','Professor(a)','Ex-professor(a)'].includes(p.role));
  if(g.age<4)return displayTitle('Minha escola','Sua jornada escolar começará aos 4 anos.')+
  '<div class="card"><h3>🧸 Os primeiros anos</h3><p>Você ainda está em casa com sua família. Avance até os 4 anos para conhecer colegas e professores.</p></div>';
  const current=g.age<=17&&!s.finished;
