@@ -84,7 +84,7 @@ function renderSkills(g){
  ensure(g);
  const tabs=[...new Set(LIB.map(s=>s[3]))];
  return '<div class="retro-screen-bar"><button class="retro-screen-close" data-go="atividades" aria-label="Voltar às atividades">×</button><strong>Habilidades</strong><span>✦</span></div>'+
- '<div class="skill-intro"><strong>🍀 Sorte: '+g.extra.luck+'%</strong><p>Você pode praticar quantas vezes quiser no mesmo ano. O talento natural varia em cada atividade: alguém pode ser excelente no violão e ter mais dificuldade em pintura. A sorte pode gerar um aprendizado extraordinário.</p></div>'+
+ '<div class="skill-intro"><strong>Pratique no seu ritmo</strong><p>Você pode praticar quantas vezes quiser no mesmo ano. Seu talento natural varia em cada atividade, e alguns treinos podem render resultados inesperadamente bons.</p></div>'+
  tabs.map(category=>'<div class="retro-section-title">'+esc(category)+'</div>'+
  LIB.filter(s=>s[3]===category).map(s=>{
  const t=talent(g,s[0]),level=score(g,s[0]),can=g.age>=s[4]&&g.alive&&!g.pendingEvent&&!(g.extra.prison>0);
