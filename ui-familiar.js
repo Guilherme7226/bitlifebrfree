@@ -152,12 +152,23 @@ document.addEventListener('click',event=>{
   const p=game.people.find(x=>Number(x.id)===Number(b.dataset.uiPerson));
   if(!p)return;
   const portrait=window.CaminhosWorld?.portrait(p.name,p.role,p.id,true)||esc(p.emoji||'👤');
-  const interactions='<button type="button" class="secondary-button" data-act="rel" data-id="'+Number(p.id)+'" data-option="aproximar" '+(game.actions<1||game.extra?.prison>0?'disabled':'')+'>💬 Conversar / passar tempo</button>';
+  const blocked=!game.alive||!!game.pendingEvent||game.extra?.prison>0;
+  const socialActions=[
+   ['aproximar','💬 Conversar'],['passar-tempo','🫂 Passar tempo'],
+   ['elogiar','🌟 Elogiar'],['presente','🎁 Dar presente (R$ 180)'],
+   ['desculpas','🙏 Pedir desculpas'],['discutir','😠 Discutir'],
+   ['provocar','😒 Provocar'],['ignorar','🙈 Ignorar']
+  ];
+  const interactions='<div class="relationship-action-heading">Escolha uma interação</div>'+
+   '<div class="relationship-action-grid">'+socialActions.map(([act,label])=>
+    '<button type="button" class="'+(['discutir','provocar','ignorar'].includes(act)?'danger-button':'secondary-button')+
+    '" data-act="rel" data-id="'+Number(p.id)+'" data-option="'+act+'" '+(blocked?'disabled':'')+'>'+
+    label+'</button>').join('')+'</div>';
   const partner=game.partnerId===p.id;
   const marriage=partner&&p.role==='Namoro'?'<button type="button" class="secondary-button" data-act="rel" data-id="'+Number(p.id)+'" data-option="casar" '+(game.age<18?'disabled':'')+'>💍 Casar</button>':'';
   const child=partner&&p.role==='Cônjuge'?'<button type="button" class="secondary-button" data-act="rel" data-id="'+Number(p.id)+'" data-option="filho">👶 Ter filho</button>':'';
   const breakup=partner?'<button type="button" class="danger-button" data-act="rel" data-id="'+Number(p.id)+'" data-option="terminar">Terminar relação</button>':'';
-  showModal('<div class="retro-person-modal">'+portrait+'<div><div class="card-kicker">RELACIONAMENTO</div><h2 id="modalTitle">'+esc(p.name)+'</h2><p>'+esc(p.role)+' · Vínculo '+Math.round(p.bond)+'/100</p></div></div><div class="mini-buttons">'+interactions+marriage+child+breakup+'</div>');
+  showModal('<div class="retro-person-modal">'+portrait+'<div><div class="card-kicker">RELACIONAMENTO</div><h2 id="modalTitle">'+esc(p.name)+'</h2><p>'+esc(p.role)+' · Vínculo '+Math.round(p.bond)+'/100</p><p class="relationship-mood">'+((p.irritation||0)>=45?'😠 Está irritado(a)':(p.irritation||0)>=18?'😕 Está incomodado(a)':'🙂 Está tranquilo(a)')+'</p></div></div>'+interactions+'<div class="mini-buttons relationship-special-actions">'+marriage+child+breakup+'</div>');
  }
  if(event.target.closest('.retro-person-modal')?.dataset?.noAction)return;
 });
