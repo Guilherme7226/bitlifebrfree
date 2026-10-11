@@ -221,18 +221,18 @@ function renderPolitics(g){
  '<div><small>MANDATO</small><strong>'+(current?e.officeYears+'/4':'—')+'</strong></div></div>'+
  '<div class="card"><h3>Minha evolução</h3><p>'+text(rank.length?rank.join(' → '):'Ainda não foi eleito.')+'</p>'+
  '<p>Escândalos: '+s.scandals+' · Antecedentes: '+(e.record||0)+(s.barredUntil>g.age?' · Inelegível até '+s.barredUntil+' anos':'')+'</p>'+
- '<div class="mini-buttons"><button type="button" class="secondary-button" data-world-action="grassroots" '+(g.actions<1||e.prison>0?'disabled':'')+'>🤝 Participar da comunidade</button></div></div>'+
+ '<div class="mini-buttons"><button type="button" class="secondary-button" data-world-action="grassroots" '+(e.prison>0?'disabled':'')+'>🤝 Participar da comunidade</button></div></div>'+
  (current?'<div class="card"><h3>Decisões do mandato</h3><p>Suas decisões políticas podem melhorar sua reputação, gerar investigações ou acabar com seu mandato.</p>'+
  '<div class="world-actions">'+
- '<button class="secondary-button" data-world-action="honest" '+(g.actions<1?'disabled':'')+'>✅ Governar honestamente</button>'+
- '<button class="secondary-button" data-world-action="audit" '+(g.actions<1?'disabled':'')+'>📊 Prestar contas</button>'+
- '<button class="secondary-button" data-world-action="corrupt" '+(g.actions<1?'disabled':'')+'>⚠️ Aceitar vantagem ilegal</button></div>'+
+ '<button class="secondary-button" data-world-action="honest" '+(!g.alive?'disabled':'')+'>✅ Governar honestamente</button>'+
+ '<button class="secondary-button" data-world-action="audit" '+(!g.alive?'disabled':'')+'>📊 Prestar contas</button>'+
+ '<button class="secondary-button" data-world-action="corrupt" '+(!g.alive?'disabled':'')+'>⚠️ Aceitar vantagem ilegal</button></div>'+
  '<p class="tiny-note">Corrupção é ilegal e pode causar investigação, perda de cargo, multa e prisão.</p></div>':'')+
  '<div class="section-title">Evolução política</div><div class="world-card-grid">'+POLITICS.map(p=>{
   const reason=politicalRequirements(g,p);
   return '<article class="world-card"><h3>🗳️ '+p.name+'</h3><p>Idade '+p.age+'+ · Carisma '+p.stat+'+ · Campanha '+brl(p.cost)+'</p>'+
   '<p>'+text(p.requires?'Depois de '+POLITICS.find(v=>v.id===p.requires)?.name:'Primeiro cargo da trajetória')+'</p>'+
-  '<button type="button" class="secondary-button" data-world-action="election" data-id="'+p.id+'" '+(reason||g.actions<1?'disabled':'')+'>Disputar eleição</button>'+
+  '<button type="button" class="secondary-button" data-world-action="election" data-id="'+p.id+'" '+(reason||!g.alive?'disabled':'')+'>Disputar eleição</button>'+
   (reason?'<small>'+text(reason)+'</small>':'')+'</article>';
  }).join('')+'</div>';
 }
@@ -267,21 +267,21 @@ function renderCrime(g){
  ' · Experiência: '+c.level+'/8 · Tentativas: '+c.attempts+'</p><p>Esta opção apresenta somente escolhas narrativas e riscos, sem ensinar crimes.</p></div>'+
  '<div class="world-card-grid">'+CRIMES.map(d=>'<div class="world-card"><h3>⚠️ '+d.name+'</h3>'+
  '<p>Risco alto de investigação, multa, perda do emprego e prisão.</p>'+
- '<button class="secondary-button" type="button" data-world-action="crime" data-id="'+d.id+'" '+(g.age<16||e.prison>0||g.actions<1?'disabled':'')+'>Escolher este caminho</button></div>').join('')+'</div>';
+ '<button class="secondary-button" type="button" data-world-action="crime" data-id="'+d.id+'" '+(g.age<16||e.prison>0||!g.alive?'disabled':'')+'>Escolher este caminho</button></div>').join('')+'</div>';
 }
 function createPet(g,id,source){
  ensure(g);const type=PETS.find(p=>p.id===id);if(!type)return;
  const e=g.extra;if(!g.alive||e.prison>0)return showToast('Não é possível cuidar ou adquirir pets enquanto estiver preso.');
  if(g.age<10)return showToast('Você pode adotar pets com sua família a partir dos 10 anos.');
  if(e.pets.length>=6)return showToast('Limite de seis animais por partida.');
- if(g.actions<1)return showToast('Você já usou todas as ações do ano.');
+ 
  if(g.pendingEvent)return showEvent();
  const charge=source==='buy'?type.buy:type.adopt;
  if(g.cash<charge)return showToast('Dinheiro insuficiente para o animal.');
  let nickname='';try{nickname=String(prompt('Qual o nome do seu '+type.name.toLowerCase()+'?','Pipoca')||'').trim()}catch{nickname='Pipoca'}
  if(!nickname)return showToast('O pet precisa de um nome.');
  nickname=nickname.slice(0,22);
- g.cash-=charge;g.actions--;
+ g.cash-=charge;
  e.pets.push({id:e.petSequence++,species:id,name:nickname,age:0,health:85,hunger:75,happiness:75,training:0,source});
  logLine(source==='buy'?'Novo companheiro':'Adoção de pet','Você '+(source==='buy'?'comprou':'adotou')+' '+nickname+', um '+type.name.toLowerCase()+'.');
  save();render();
@@ -289,11 +289,11 @@ function createPet(g,id,source){
 function petAction(g,id,act){
  ensure(g);const p=g.extra.pets.find(x=>x.id===Number(id));if(!p)return;
  if(g.extra.prison>0||!g.alive)return showToast('Não é possível cuidar de pets enquanto estiver preso.');
- if(g.actions<1)return showToast('Você não tem ações disponíveis.');
+ 
  if(g.pendingEvent)return showEvent();
  const cost=act==='vet'?380:act==='feed'?70:0;
  if(g.cash<cost)return showToast('Saldo insuficiente.');
- g.actions--;g.cash-=cost;
+ g.cash-=cost;
  if(act==='feed'){p.hunger=clamp100(p.hunger+42);p.health=clamp100(p.health+5);}
  else if(act==='play'){p.happiness=clamp100(p.happiness+24);p.hunger=clamp100(p.hunger-7);g.stats.felicidade=clamp100(g.stats.felicidade+5);}
  else if(act==='vet'){p.health=clamp100(p.health+35);p.happiness=clamp100(p.happiness+7);}
@@ -311,15 +311,15 @@ function renderPets(g){
    '<div class="pet-bars"><span>❤️ Saúde '+p.health+'/100</span><span>🍎 Alimentação '+p.hunger+'/100</span><span>😊 Felicidade '+p.happiness+'/100</span><span>🎓 Treino '+p.training+'/100</span></div>'+
    '<div class="mini-buttons">'+[
     ['feed','🍎 Alimentar'],['play','🎾 Brincar'],['vet','🩺 Veterinário'],['train','🎓 Treinar']
-   ].map(([id,label])=>'<button class="secondary-button" data-world-action="pet-care" data-id="'+p.id+'" data-choice="'+id+'" '+(g.actions<1||e.prison>0?'disabled':'')+'>'+label+'</button>').join('')+'</div></div></article>';
+   ].map(([id,label])=>'<button class="secondary-button" data-world-action="pet-care" data-id="'+p.id+'" data-choice="'+id+'" '+(e.prison>0?'disabled':'')+'>'+label+'</button>').join('')+'</div></div></article>';
  }).join('');
  return displayTitle('🐾 Meus pets','Adote ou compre animais, dê nomes e cuide deles ao longo dos anos.')+
  '<div class="card"><h3>Minha família de animais</h3><p>'+e.pets.length+' de 6 pets. Animais precisam de alimentação, companhia e cuidados anuais.</p></div>'+
  (e.pets.length?'<div class="pet-grid">'+people+'</div>':'<div class="notice">Você ainda não tem pets. Escolha uma espécie para adotar ou comprar.</div>')+
  '<div class="section-title">Adoção e compra</div><div class="world-card-grid">'+PETS.map(p=>
   '<div class="world-card"><h3>'+p.icon+' '+p.name+'</h3><p>Adotar: grátis · Comprar: '+brl(p.buy)+'</p>'+
-  '<div class="mini-buttons"><button class="secondary-button" data-world-action="pet-add" data-id="'+p.id+'" data-choice="adopt" '+(e.prison>0||g.age<10||g.actions<1||e.pets.length>=6?'disabled':'')+'>Adotar</button>'+
-  '<button class="secondary-button" data-world-action="pet-add" data-id="'+p.id+'" data-choice="buy" '+(e.prison>0||g.age<10||g.actions<1||e.pets.length>=6||g.cash<p.buy?'disabled':'')+'>Comprar</button></div></div>').join('')+'</div>';
+  '<div class="mini-buttons"><button class="secondary-button" data-world-action="pet-add" data-id="'+p.id+'" data-choice="adopt" '+(e.prison>0||g.age<10||!g.alive||e.pets.length>=6?'disabled':'')+'>Adotar</button>'+
+  '<button class="secondary-button" data-world-action="pet-add" data-id="'+p.id+'" data-choice="buy" '+(e.prison>0||g.age<10||!g.alive||e.pets.length>=6||g.cash<p.buy?'disabled':'')+'>Comprar</button></div></div>').join('')+'</div>';
 }
 document.addEventListener('click',ev=>{
  const b=ev.target.closest('[data-world-action]');
