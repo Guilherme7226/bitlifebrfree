@@ -162,6 +162,7 @@ document.addEventListener('click',event=>{
    ...(game.age>=12?[['acordo','😎','Acordo','Venda um objeto pessoal a '+p.name]]:[]),
    ['presente','🎁','Presentear','Dê um presente a '+p.name],
    ['insultar','😡','Insultar','Ofenda '+p.name+' e arrisque o vínculo'],
+   ...(game.age>=6?[['agredir','🥊','Agredir','Escolha um golpe; a pessoa pode reagir ou denunciar']]:[]),
    ...(game.age>=6?[['cinema','🎭','Cinema','Assista a um filme com '+p.name]]:[]),
    ...(cult?[['recrutar','🤝','Recrutar','Convide '+p.name+' para seu culto']]:[]),
    ['passar-tempo','🕰️','Passar tempo','Passe um tempo com '+p.name],
@@ -182,7 +183,7 @@ document.addEventListener('click',event=>{
    '<p class="relationship-mood">'+((p.irritation||0)>=45?'😠 Está irritado(a)':(p.irritation||0)>=18?'😕 Está incomodado(a)':'🙂 Está tranquilo(a)')+'</p></div></div></div>';
   const interactions='<div class="social-menu-title">INTERAÇÕES</div>'+
    '<div class="social-options">'+socialActions.map(([act,emoji,title,description])=>{
-    const danger=['insultar','discutir','provocar','ignorar','terminar','espiar'].includes(act);
+    const danger=['insultar','agredir','discutir','provocar','ignorar','terminar','espiar'].includes(act);
     const unavailable=blocked||(act==='casar'&&(game.age<18||p.bond<65))||(act==='filho'&&game.age<18);
     return '<button type="button" class="social-option'+(danger?' is-negative':'')+
      '" data-act="rel" data-id="'+Number(p.id)+'" data-option="'+act+'" '+(unavailable?'disabled':'')+'>'+
