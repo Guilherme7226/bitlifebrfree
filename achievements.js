@@ -22,8 +22,8 @@
     ['mente','Estudos','🧠','Mente brilhante','Alcance 90 de inteligência.',g=>g.stats.inteligencia>=90],
     ['atleta','Atributos','❤️','Vida saudável','Alcance 95 de saúde.',g=>g.stats.saude>=95],
     ['feliz','Atributos','🌞','Felicidade plena','Alcance 95 de felicidade.',g=>g.stats.felicidade>=95],
-    ['disciplinado','Atributos','⚡','Foco total','Alcance 95 de disciplina.',g=>g.stats.disciplina>=95],
-    ['carismatico','Atributos','💬','Pessoa magnética','Alcance 95 de carisma.',g=>g.stats.carisma>=95],
+    ['disciplinado','Atributos','❤️','Saúde de ferro','Alcance 95 de saúde.',g=>g.stats.saude>=95],
+    ['carismatico','Atributos','✨','Visual impecável','Alcance 95 de aparência.',g=>(g.extra?.appearance||0)>=95],
     ['primeira-economia','Finanças','💰','Primeira reserva','Tenha R$ 10 mil investidos.',g=>g.savings>=10000],
     ['cem-mil','Finanças','💵','Seis dígitos','Acumule R$ 100 mil em dinheiro.',g=>g.cash>=100000],
     ['milionario','Finanças','💎','Milionário','Alcance R$ 1 milhão de patrimônio.',g=>g.cash+g.savings+g.properties*75000>=1000000],
@@ -125,7 +125,15 @@
       const sets=[
         ['inicio',c.emoji,'Primeiros passos','Comece a trabalhar como '+c.name+'.',g=>same(g)],
         ['cinco', '📅','Experiência comprovada','Trabalhe cinco anos como '+c.name+'.',g=>same(g)&&g.jobYears>=5],
-        ['excelencia','🌟','Destaque da profissão','Atinja 90 de '+({inteligencia:'inteligência',saude:'saúde',disciplina:'disciplina',carisma:'carisma',felicidade:'felicidade'}[c.stat]||c.stat)+' após dez anos como '+c.name+'.',g=>same(g)&&g.jobYears>=10&&g.stats[c.stat]>=90],
+        ['excelencia','🌟','Destaque da profissão','Alcance excelência na carreira de '+c.name+' após dez anos de serviço.',
+         g=>{const metric=c.id==='politico'?'popularidade':
+           ['ator','influencer'].includes(c.id)?'aparencia':
+           ['policial','militar_exercito','militar_marinha','militar_aeronautica','bombeiro','lutador','atleta'].includes(c.id)?'saude':
+           c.stat==='disciplina'?'inteligencia':c.stat==='carisma'?'felicidade':c.stat;
+           const value=metric==='popularidade'?g.extra?.reputation:
+             metric==='aparencia'?g.extra?.appearance:g.stats[metric];
+           return same(g)&&g.jobYears>=10&&value>=90;
+         }],
         ['vinte','🏆','Carreira consolidada','Trabalhe vinte anos consecutivos como '+c.name+'.',g=>same(g)&&g.jobYears>=20]
       ];
       if(['policial','policial_civil','policial_federal','bombeiro','militar_exercito','militar_marinha','militar_aeronautica'].includes(c.id)){
