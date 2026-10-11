@@ -92,11 +92,11 @@ function annual(g){
        const level=Math.max(1,Number(a.level)||1);
        const revenue=Math.round(product[4]*(0.19+Math.random()*.24)*level);
        const operating=Math.round(product[4]*.17*level+Math.max(1,Number(a.employees)||1)*950);
-       const change=revenue-operating;
+       const change=Math.round((revenue-operating)*Math.max(0,Math.min(1,Number.isFinite(a.share)?a.share:1)));
        a.profit=(Number(a.profit)||0)+change;
        profit+=change;
      }else{
-       maintenance+=Math.round(product[5]*(1+years*.035));
+       maintenance+=Math.round(product[5]*(1+years*.035)*Math.max(0,Math.min(1,Number.isFinite(a.share)?a.share:1)));
      }
    }
    if(profit||maintenance){
@@ -128,8 +128,16 @@ function worth(a,g){
  const p=item(a.type);
  if(!p)return 0;
  const years=Math.max(0,g.age-(Number(a.age)||0));
- if(p[1]==='empresas')return Math.max(p[4]*.2,Math.round(p[4]*(.72+.15*(a.level||1))+(Number(a.profit)||0)*.3));
- return Math.max(p[4]*.13,Math.round(p[4]*Math.pow(1+p[6],years)));
+ const share=Math.max(0,Math.min(1,Number.isFinite(a.share)?a.share:1));
+ const basis=Number(a.basisValue);
+ if(Number.isFinite(basis)&&basis>=0){
+   const increase=p[1]==='empresas'?.016:p[6];
+   return Math.max(0,Math.round(basis*Math.pow(1+increase,years)*share));
+ }
+ const full=p[1]==='empresas'
+   ?Math.max(p[4]*.2,Math.round(p[4]*(.72+.15*(a.level||1))+(Number(a.profit)||0)*.3))
+   :Math.max(p[4]*.13,Math.round(p[4]*Math.pow(1+p[6],years)));
+ return Math.round(full*share);
 }
 function renderSchool(g){
  ensure(g);const s=g.extra.school, schoolPeople=g.people.filter(p=>['Colega','Amizade','Professor(a)','Ex-professor(a)'].includes(p.role));
@@ -214,7 +222,7 @@ function renderAssets(g){
      const p=item(a.type);if(!p)return '';
      const value=worth(a,g),company=p[1]==='empresas';
      return '<article class="asset-tile owned"><div class="asset-tile-head"><span>'+p[2]+'</span><div><strong>'+clean(p[3])+'</strong><small>Comprado aos '+a.age+' anos'+(company?' · Nível '+(a.level||1):'')+'</small></div></div>'+
-       '<p>Valor estimado: <b>'+brl(value)+'</b>'+(company?'<br>Lucro acumulado: '+brl(a.profit||0):'')+'</p>'+
+       '<p>Valor estimado: <b>'+brl(value)+'</b>'+(Number.isFinite(a.share)&&a.share<.999?' · Sua participação: '+Math.round(a.share*1000)/10+'%':'')+(company?'<br>Lucro acumulado: '+brl(a.profit||0):'')+'</p>'+
        '<div class="asset-actions">'+(company?'<button class="secondary-button" data-life-extra="upgrade" data-inventory="'+Number(a.id)+'" '+(g.actions<1?'disabled':'')+'>Expandir</button>':'')+
        '<button class="secondary-button" data-life-extra="sell" data-inventory="'+Number(a.id)+'">Vender</button></div></article>';
    }).join('')+'</div>';
@@ -285,5 +293,5 @@ document.addEventListener('click',event=>{
  if(action==='school'||action==='talk'){schoolAction(game,action==='talk'?'talk':btn.dataset.id,btn.dataset.person);return}
  if(['buy','sell','upgrade'].includes(action))assetsAction(game,action,btn.dataset.id,btn.dataset.inventory);
 });
-window.CaminhosExtras={ensure,annual,wealth,renderSchool,renderAssets,businessCards,schoolAction};
+window.CaminhosExtras={ensure,annual,wealth,worth,renderSchool,renderAssets,businessCards,schoolAction};
 })();
