@@ -234,3 +234,18 @@ body{background:#e7edf3;color:#173e65;font-size:15px}
  .retro-stat-row{grid-template-columns:minmax(98px,31%) minmax(0,1fr) 38px}
  .retro-stat-name{font-size:11px}
 }
+
+/* Legendas da dock independentes dos icones circulares. */
+@media(max-width:700px){
+ .mobile-dock button span.dock-caption,
+ .mobile-dock .dock-plus span.dock-caption{
+  display:block;width:auto;height:auto;min-height:0;line-height:1.15;
+  background:transparent;border:none;border-radius:0;box-shadow:none;
+  font-size:10px;font-weight:700;color:white;white-space:nowrap;padding:0;margin:0;
+ }
+ .mobile-dock .dock-plus span.dock-caption{font-size:11px;margin-top:2px}
+ .mobile-dock .dock-plus span:first-child{margin-top:-37px}
+}
+@media(max-width:360px){
+ .mobile-dock button span.dock-caption{font-size:9px}
+}
