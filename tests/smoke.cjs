@@ -172,7 +172,7 @@ const iosCss=fs.readFileSync('theme-classic.css','utf8');
 assert.match(iosCss,/height:calc\(64px \+ env\(safe-area-inset-top, 0px\)\)/,'cabeçalho respeita barra de status');
 assert.match(iosCss,/padding-top:env\(safe-area-inset-top, 0px\)/,'reserva vertical segura do iPhone');
 assert.match(iosCss,/top:calc\(159px \+ env\(safe-area-inset-top, 0px\)\)/,'título fixo não invade o cabeçalho');
-assert.match(fs.readFileSync('index.html','utf8'),/theme-classic\.css\?v=20261011-inheritance/,'cache do iPhone atualizado');
+assert.match(fs.readFileSync('index.html','utf8'),/theme-classic\.css\?v=20261011-stats-fixed/,'cache do iPhone atualizado');
 assert.doesNotMatch(fs.readFileSync('index.html','utf8'),/data-tab="escola"|data-tab="hobbies"/,'school and martial arts accessed in relevant parent sections');
 const statusCss=fs.readFileSync('theme-classic.css','utf8');
 assert.match(statusCss,/\.game>\.stats-strip\{\s*order:1;/,'status aparecem antes do diario no iPhone');
@@ -245,5 +245,38 @@ assert.doesNotMatch(code("window.CaminhosSkills.render(game)"),/Sorte:|🍀/,'ha
 assert.doesNotMatch(code("window.CaminhosEveryday.renderMenu(game)"),/Sorte:\\s*\\d+|🍀/,'atividades nao mostram percentual da sorte');
 assert.match(fs.readFileSync('skills.js','utf8'),/const luck=g\.extra\.luck/,'talento ainda usa sorte nos calculos');
 assert.match(fs.readFileSync('everyday.js','utf8'),/const prob=\(g\.extra\.luck/,'loteria ainda usa sorte interna');
-assert.match(fs.readFileSync('index.html','utf8'),/ui-familiar\.js\?v=20261011-sorte-interna/,'iPhone recebe o layout atualizado');
+assert.match(fs.readFileSync('index.html','utf8'),/ui-familiar\.js\?v=20261011-four-stats/,'iPhone recebe o layout atualizado');
+// User interface must preserve four general attributes and show only applicable career stats.
+const four=code("window.CaminhosUI.renderStats(game)");
+assert.equal((four.match(/class="retro-stat-row retro-stat-action"/g)||[]).length,4,
+ 'exactly four core stats by default');
+assert.doesNotMatch(four,/Carisma|Disciplina|Popularidade|Fama/,'hide professional extras outside careers');
+assert.match(four,/data-stat="aparencia"/,'appearance is touchable');
+code("game.history=[{age:30,title:'Mais recente',description:'Mensagem recente'},{age:29,title:'Mais antigo',description:'Mensagem antiga'}]");
+const timeline=code("window.CaminhosUI.renderTab(game,'vida')");
+assert.ok(timeline.indexOf('Mensagem recente')<timeline.indexOf('Mensagem antiga'),
+ 'diary displays newest entries first');
+const appearance=code("game.extra.appearance");
+code("openAttributeOpportunity('aparencia')");
+assert.equal(code("game.pendingEvent.source"),'attribute','tap attribute opens decision');
+assert.match(code("document.getElementById('modalContent').innerHTML"),/Uma mudança de visual/,'visual boost modal appears');
+code("applyChoice(0)");
+assert.ok(code("game.extra.appearance")>appearance,'choice changes visible appearance stat');
+assert.equal(code('game.pendingEvent'),null,'decision ends modal event');
+code("game.job='politico';game.extra.reputation=72;game.age=40;render()");
+const politician=code("window.CaminhosUI.renderStats(game)");
+assert.match(politician,/Popularidade/,'politician sees popularity');
+assert.equal((politician.match(/retro-stat-action/g)||[]).length,5,
+ 'politician gets one extra professional stat');
+code("game.job='ator';game.extra.office=null;game.extra.fame=60;render()");
+const actor=code("window.CaminhosUI.renderStats(game)");
+assert.match(actor,/Fama/,'famous career shows fame');
+assert.doesNotMatch(actor,/Popularidade/,'does not mix professional bars');
+const cssFixed=fs.readFileSync('theme-classic.css','utf8');
+assert.match(cssFixed,/position:sticky;[\s\S]*top:calc\(159px \+ env\(safe-area-inset-top, 0px\)\)/,
+ 'stats remain visible under iPhone notch during scroll');
+assert.match(cssFixed,/--stats-sticky-size:79px/,'sticky reserved space for core stats');
+assert.match(fs.readFileSync('index.html','utf8'),/game\.js\?v=20261011-choices-popularidade/,
+ 'new game logic cache busted');
+
 console.log('OK: escola, amigos, professores, bens, empresas, venda, salvamento e navegação.');
