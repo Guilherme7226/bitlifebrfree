@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0d1427">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Caminhos">
+  <link rel="apple-touch-icon" href="app-icon.svg">
+  <link rel="icon" href="app-icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="description" content="Caminhos: seu simulador de vida com escolhas, carreira, família e histórias inesperadas.">
+  <title>Caminhos — Simulador de Vida</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="game.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Caminhos: início" id="brandHome"><span class="brand-mark">✦</span><span>CAMINHOS<span class="brand-dot">.</span><small>SIMULADOR DE VIDA</small></span></a>
+      <div class="top-right"><span class="online"><span></span> Jogo local</span><button class="icon-button" id="openSettings" type="button" title="Configurações" aria-label="Configurações">⚙</button></div>
+    </header>
+    <section id="welcomeView" class="welcome hidden">
+      <div class="welcome-copy"><span class="eyebrow"><span class="sparkle">✳</span> SUA HISTÓRIA COMEÇA AQUI</span>
+        <h1>Uma vida.<br><em>Infinitos caminhos.</em></h1>
+        <p>De seu primeiro passo até o seu maior legado, cada escolha muda o futuro. Quem você vai se tornar?</p>
+        <div class="feature-pills"><span>🎲 Eventos surpreendentes</span><span>💼 Profissões</span><span>💞 Relações</span><span>🧠 IA opcional</span></div>
+        <div class="welcome-art" aria-hidden="true"><span class="art-moon">✦</span><div class="art-road"></div><span class="art-orb">✷</span><small>Cada escolha conta.</small></div>
+      </div>
+      <form id="newGameForm" class="creation-card">
+        <div class="card-kicker">CAPÍTULO 01 / O COMEÇO</div><h2>Crie sua história</h2><p>É assim que tudo começa.</p>
+        <label for="playerName">Seu nome</label><input id="playerName" name="name" maxlength="32" minlength="2" value="Alex" placeholder="Como você se chama?" required>
+        <label for="playerCity">Onde você nasceu?</label><select id="playerCity" name="city"><option>Santos, SP</option><option>São Paulo, SP</option><option>Rio de Janeiro, RJ</option><option>Belo Horizonte, MG</option><option>Curitiba, PR</option><option>Recife, PE</option><option>Porto Alegre, RS</option><option>Outra cidade do Brasil</option></select>
+        <label for="playerTrait">Sua personalidade</label><select id="playerTrait" name="trait"><option value="ambicioso">🚀 Ambicioso — foco na carreira</option><option value="carismatico">💬 Carismático — facilidade social</option><option value="curioso">📚 Curioso — aprende rápido</option><option value="tranquilo">🌿 Tranquilo — menos estresse</option></select>
+        <button type="submit" class="primary-button wide">Começar minha vida <span>→</span></button><p class="tiny-note">🔒 Seu progresso fica salvo neste navegador, neste dispositivo.</p>
+      </form>
+    </section>
+    <main id="gameView" class="game hidden">
+      <section class="profile-banner">
+        <div class="profile-avatar" id="avatar">👶</div>
+        <div class="profile-heading"><div class="eyebrow" id="lifeStage">A PRIMEIRA PÁGINA</div><h1 id="heroName">Alex</h1><div class="profile-sub"><span id="ageLabel">0 anos</span><span class="dot-separator">·</span><span id="jobLabel">Descobrindo o mundo</span></div></div>
+        <div class="profile-money"><small>PATRIMÔNIO DISPONÍVEL</small><strong id="moneyLabel">R$ 0</strong><span id="savingsLabel">Investimentos: R$ 0</span></div>
+      </section>
+      <section class="stats-strip" id="statsStrip" aria-label="Atributos do personagem"></section>
+      <div class="body-grid">
+        <aside class="sidebar"><nav id="tabs" class="nav-list" aria-label="Seções do jogo">
+          <button data-tab="vida" class="tab active">✦ <span>Minha vida</span></button>
+          <button data-tab="carreira" class="tab">💼 <span>Carreira</span></button>
+          <button data-tab="relacoes" class="tab">♥ <span>Relações</span></button>
+          <button data-tab="financas" class="tab">◈ <span>Finanças</span></button>
+          <button data-tab="historia" class="tab">☷ <span>Minha história</span></button>
+          <button data-tab="ia" class="tab">✳ <span>Inteligência artificial</span></button>
+          <button data-tab="negocios" class="tab">🏢 <span>Negócios</span></button>
+          <button data-tab="politica" class="tab">🗳️ <span>Política</span></button>
+          <button data-tab="fama" class="tab">🌟 <span>Fama e luta</span></button>
+          <button data-tab="desafios" class="tab">⚖️ <span>Riscos</span></button>
+          <button data-tab="criador" class="tab">✨ <span>Modo Criador</span></button>
+        </nav><div class="sidebar-quote"><div>✧</div>"O futuro depende do que você faz hoje."<span>— Seu destino</span></div></aside>
+        <section class="content-panel"><div id="tabContent"></div></section>
+        <aside class="rightbar"><div class="year-card"><div class="card-kicker">SUA JORNADA</div><div class="year-number" id="yearNumber">0<span>anos</span></div><div class="year-progress"><span id="apLabel">3 ações disponíveis</span><div id="apDots" class="ap-dots"><b></b><b></b><b></b></div></div><button id="nextYear" class="primary-button wide">+ Avançar 1 ano <span>→</span></button><p>O tempo passa, e novas possibilidades aparecem.</p></div>
+        <div class="mini-story"><div class="mini-header">ÚLTIMO ACONTECIMENTO <span>✦</span></div><p id="lastEvent">Sua história está prestes a começar.</p></div>
+        <div class="tip-box">💡 <span>Suas ações influenciam suas oportunidades e o rumo da sua vida.</span></div>
+        </aside>
+      </div>
+      <nav class="mobile-dock" aria-label="Acesso rápido no iPhone">
+        <button type="button" data-dock="vida"><span>🏠</span>Vida</button>
+        <button type="button" data-dock="carreira"><span>💼</span>Trabalho</button>
+        <button type="button" data-dock="advance" class="dock-plus" aria-label="Avançar mais um ano"><span>+</span>Idade</button>
+        <button type="button" data-dock="relacoes"><span>💗</span>Relações</button>
+        <button type="button" data-dock="more"><span>☰</span>Mais</button>
+      </nav>
+    </main>
+    <footer class="app-footer">CAMINHOS • Um jogo original sobre escolhas <span>Feito para jogar, experimentar e recomeçar.</span></footer>
+  </div>
+  <div id="overlay" class="modal-overlay hidden" role="presentation"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><button id="closeModal" class="modal-close" type="button" aria-label="Fechar">✕</button><div id="modalContent"></div></div></div>
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+</body>
+</html>
