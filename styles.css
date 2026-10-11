@@ -37,3 +37,118 @@
  .toast{bottom:calc(90px + env(safe-area-inset-bottom));max-width:95%}
 }
 @media(max-width:370px){.stat-card{padding:8px 3px}.stat-name{font-size:8px}.profile-banner{padding:14px 11px}.mobile-dock button{font-size:9px}.mobile-dock button span{font-size:18px}}
+
+
+/* CAMINHOS 2.1 — vida em diario e controles na posicao familiar de simuladores de vida. */
+.nav-toggle{display:none}
+.profile-home{display:none}
+.profile-actions{display:none}
+.diary-heading{margin-bottom:13px}
+.diary-heading>span{color:#a58cfc;font-size:11px;letter-spacing:1.8px;font-weight:800}
+.diary-heading strong{display:block;font-size:26px;margin:6px 0}
+.diary-heading p{margin:0;color:#9caac3;font-size:13px}
+.life-diary{border:1px solid #304058;border-radius:16px;background:#142038;padding:24px;max-height:680px;overflow-y:auto;overscroll-behavior:contain}
+.diary-age{font-size:15px;font-weight:850;color:#99c0ff;margin:22px 0 10px;padding-bottom:9px;border-bottom:1px solid #35445a}
+.diary-age:first-child{margin-top:0}
+.diary-item{padding:2px 0 13px;border-left:3px solid #637ac0;margin-left:3px;padding-left:13px;margin-bottom:12px}
+.diary-item strong{font-size:13px;color:#eef3ff}
+.diary-item p{color:#becbe0;font-size:13px;line-height:1.6;margin:7px 0 0}
+.diary-footer{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}
+@media (max-width:700px){
+ /* App phone layout: short header, biography, life feed, large centered age control, visible attributes. */
+ html{scroll-padding-top:66px;scroll-padding-bottom:230px}
+ body{background:#f4f6fb;color:#233049;overflow-x:hidden}
+ .app-shell{padding:0 0 calc(234px + env(safe-area-inset-bottom));max-width:100%}
+ .topbar{height:calc(58px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 13px 0;background:#244477;color:#fff;border:0;box-shadow:0 2px 9px #101e3a22;gap:10px}
+ .brand{font-size:17px;letter-spacing:1.1px;gap:5px;min-width:0;flex:1}
+ .brand .brand-mark{color:#e0f7d0;font-size:24px}
+ .brand-dot{color:#a7ef85}
+ .brand small{font-size:7px;letter-spacing:1.5px;color:#d7e9f7}
+ .top-right{gap:6px}
+ .icon-button{border:0;border-radius:10px;background:#ffffff20;height:38px;width:38px;color:white}
+ .nav-toggle{display:grid;place-items:center;flex:none;font-size:20px}
+ .game{padding-top:0}
+ .profile-banner{border:0;border-bottom:1px solid #dfe4f1;border-radius:0;padding:8px 13px;gap:10px;background:#fff;box-shadow:none;display:grid;grid-template-columns:48px minmax(0,1fr) auto;align-items:center}
+ .profile-avatar{width:44px;height:44px;border-radius:50%;font-size:26px;background:#eaf1fb;border:1px solid #dce6f6}
+ .profile-heading{min-width:0}
+ .profile-heading h1{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:1px 0 2px;color:#17396c;letter-spacing:0}
+ .profile-home{display:inline-flex;gap:4px;align-items:center;padding:0;background:none;border:0;color:#6179a7;font-size:10px;font-weight:800}
+ .profile-home span{display:none}
+ .profile-heading .eyebrow{display:none}
+ .profile-sub{color:#6a7790;font-size:10px;display:flex;flex-wrap:wrap;gap:0;line-height:1.4}
+ .dot-separator{padding:0 4px}
+ .profile-sub #jobLabel{max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ .profile-actions{display:block;width:100%;font-size:9px;color:#5573a8;font-weight:700}
+ .profile-money{width:auto;min-width:0;max-width:127px;border:0;padding:0;margin:0;text-align:right;grid-column:3;grid-row:1}
+ .profile-money small{font-size:8px;letter-spacing:.2px;color:#687a9a}
+ .profile-money strong{font-size:15px;color:#258655;margin-top:1px;white-space:nowrap}
+ .profile-money span{display:none}
+ /* Put the journal above the stats, keeping the main area uncluttered. */
+ .body-grid{display:block;padding:10px 12px 0;min-width:0}
+ .sidebar,.rightbar{display:none!important}
+ .content-panel{width:100%;min-height:0;padding:0 0 10px}
+ .diary-heading{padding:4px 4px 8px;margin:0}
+ .diary-heading>span{font-size:9px;color:#5272ae;letter-spacing:1.4px}
+ .diary-heading strong{font-size:20px;color:#17365e;margin:2px 0}
+ .diary-heading p{color:#6c7d96;font-size:12px}
+ .life-diary{max-height:none;min-height:calc(100dvh - 395px);overflow:visible;border:1px solid #e2e8f0;border-radius:12px;background:#fff;box-shadow:0 3px 14px #0a254212;padding:13px 16px}
+ .diary-age{color:#1c5d9e;font-size:14px;margin:14px 0 9px;padding-bottom:7px;border-color:#e7edf6}
+ .diary-age:first-child{margin-top:0}
+ .diary-item{border-left:2px solid #bad5f3;margin:0 0 9px 1px;padding:3px 0 10px 12px}
+ .diary-item strong{color:#203b5b;font-size:12px}
+ .diary-item p{color:#485b73;font-size:12px;margin:5px 0 0;line-height:1.55}
+ .diary-footer{margin:12px 0 0;gap:7px}
+ .diary-footer button{flex:1;min-height:44px}
+ .content-panel .panel-title{color:#1a3e66;font-size:20px}
+ .content-panel .panel-subtitle{color:#627189}
+ .content-panel .card,.content-panel .action-card{background:#fff;border-color:#dce4ef;color:#243750;box-shadow:0 2px 10px #1c2f4a0b}
+ .content-panel .card h3,.content-panel .action-name,.content-panel .section-title{color:#243b56}
+ .content-panel .card p,.content-panel .action-desc{color:#63738c}
+ .content-panel .notice{color:#41546c;background:#ebf1f9;border-color:#ccdbee}
+ .content-panel .tag{color:#51418b;background:#eeeaff;border-color:#d4caff}
+ .content-panel .tag.green{color:#27795d;background:#e0f6ea;border-color:#ace0c6}
+ .content-panel .secondary-button{background:#eaf1fc;color:#234d7d;border-color:#cad8ed}
+ .content-panel .danger-button{color:#a53651;background:#fce8ed}
+ .content-panel .highlight-number,.content-panel .light{color:#238458}
+ .content-panel .muted{color:#6b7a8b}
+ .content-panel .timeline-item p{color:#536981}
+ .content-panel .timeline-item strong{color:#233f5e}
+ .content-panel .person-avatar{background:#e7eef8}
+ .content-panel .row-between{min-width:0}
+ .content-panel .mini-buttons>button{min-height:43px}
+ .actions-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .action-card{min-height:115px;padding:12px}
+ .action-card:active{transform:scale(.985)}
+ /* dock is just above the compact, always-visible stat bars. */
+ .mobile-dock{position:fixed;display:grid;grid-template-columns:1fr 1fr 1.13fr 1fr 1fr;align-items:stretch;left:0;right:0;bottom:calc(99px + env(safe-area-inset-bottom));height:76px;z-index:50;gap:0;border:0;border-top:1px solid #385e95;background:#173b72;box-shadow:0 -8px 25px #0d2c5633;padding:5px 4px 4px;backdrop-filter:none}
+ .mobile-dock button{min-height:0;padding:2px 1px;gap:4px;border:0;border-radius:0;color:#dae7f5;font-size:10px;font-weight:750;min-width:0}
+ .mobile-dock button span{font-size:19px;line-height:21px}
+ .mobile-dock button.active{background:#ffffff13;color:#fff}
+ .mobile-dock .dock-plus{font-size:10px;color:white;font-weight:800;padding:0;overflow:visible}
+ .mobile-dock .dock-plus span{height:64px;width:64px;margin-top:-25px;border-radius:50%;border:3px solid #e4fff0;background:#229446;box-shadow:0 0 0 4px #173b72,0 5px 14px #122d4266;color:#fff;font-size:42px;font-weight:500;line-height:1;display:grid;place-items:center;transform:none}
+ .mobile-dock .dock-plus:disabled{opacity:.5}
+ .stats-strip{display:grid;grid-template-columns:1fr;gap:2px;position:fixed;bottom:0;left:0;right:0;z-index:51;margin:0;padding:7px max(16px,env(safe-area-inset-left)) calc(5px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-right));height:calc(99px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid #dde5ef;box-shadow:0 -1px 6px #152d4811}
+ .stat-card{display:grid;grid-template-columns: minmax(0,1fr) 51%;align-items:center;gap:7px;text-align:left;padding:0 3px;border:0;background:transparent;min-height:15px}
+ .stat-row{display:flex;align-items:center;gap:10px;justify-content:space-between;min-width:0}
+ .stat-name{font-size:10px;color:#40536c;white-space:nowrap;word-break:normal}
+ .stat-value{font-size:10px;color:#40536c;display:block;margin:0;font-variant-numeric:tabular-nums}
+ .stat-track{height:8px;margin:0;border-radius:3px;background:#e4eaf2}
+ .stat-fill{border-radius:2px}
+ .toast{bottom:calc(186px + env(safe-area-inset-bottom))}
+ .app-footer{display:none}
+ .welcome{padding:28px 18px;background:#0d1427;color:#f1f5ff}
+ .welcome-copy>p{color:#cad3e6}
+ .welcome-copy h1{font-size:43px}
+ .welcome .creation-card{color:#f1f5ff}
+ .modal-overlay{z-index:99}
+ .more-grid{gap:8px}
+ .more-grid button{min-width:0;padding:12px 8px;font-size:12px;min-height:50px}
+ }
+ @media(max-width:360px){
+ .profile-money strong{font-size:13px}
+ .profile-sub #jobLabel{max-width:88px}
+ .mobile-dock button{font-size:9px}
+ .mobile-dock .dock-plus span{width:55px;height:55px}
+ .stat-name{font-size:9px}
+ .stat-card{gap:4px}
+ }
