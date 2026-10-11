@@ -128,8 +128,7 @@ function renderStats(g){
  statRow('Inteligência','🧠',g.stats.inteligencia)+
  statRow('Aparência','✨',g.extra.appearance)+
  statRow('Carisma','💬',g.stats.carisma)+
- statRow('Disciplina','⚡',g.stats.disciplina)+
- statRow('Sorte','🍀',g.extra.luck??50)+'</div>';
+ statRow('Disciplina','⚡',g.stats.disciplina)+'</div>';
 }
 function renderTab(g,tab){
  ensure(g);
