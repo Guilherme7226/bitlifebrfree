@@ -22,17 +22,18 @@ jobs:
       - name: Validar arquivos e JavaScript
         run: |
           set -eu
-          for arq in index.html styles.css game.js achievements.js cloud.js cloud-config.js manifest.webmanifest app-icon.svg; do
+          for arq in index.html styles.css game.js achievements.js life-extras.js cloud.js cloud-config.js manifest.webmanifest app-icon.svg; do
             test -s "$arq" || { echo "Arquivo ausente ou vazio: $arq"; exit 1; }
           done
           node --check game.js
           node --check achievements.js
+          node --check life-extras.js
           node --check cloud.js
           node --check cloud-config.js
       - name: Empacotar somente arquivos publicos
         run: |
           mkdir -p _site
-          cp index.html styles.css game.js achievements.js cloud.js cloud-config.js manifest.webmanifest app-icon.svg _site/
+          cp index.html styles.css game.js achievements.js life-extras.js cloud.js cloud-config.js manifest.webmanifest app-icon.svg _site/
           touch _site/.nojekyll
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v5
