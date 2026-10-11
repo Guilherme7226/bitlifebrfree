@@ -201,11 +201,10 @@ body{background:#e7edf3;color:#173e65;font-size:15px}
  .retro-diary{padding:14px 13px 17px;min-height:280px}
  .retro-diary-age{font-size:15px;margin-top:15px}
  .retro-diary-line{font-size:15px;line-height:1.43;margin:0 0 3px}
- .mobile-dock{display:grid;grid-template-columns:repeat(2,minmax(0,1fr)) 1.3fr repeat(3,minmax(0,1fr));bottom:0;left:0;right:0;z-index:75;background:#07558f;border:0;border-top:2px solid #0b477c;box-shadow:0 -4px 13px #2b384744;align-items:stretch;padding:6px 4px calc(7px + env(safe-area-inset-bottom));gap:0;backdrop-filter:none}
+ .mobile-dock{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.25fr) minmax(0,1fr) minmax(0,1fr);bottom:0;left:0;right:0;z-index:75;background:#07558f;border:0;border-top:2px solid #0b477c;box-shadow:0 -4px 13px #2b384744;align-items:stretch;padding:6px 4px calc(7px + env(safe-area-inset-bottom));gap:0;backdrop-filter:none}
  .mobile-dock button{font-size:10px;color:#fff;min-height:60px;font-weight:700;padding:2px 0;gap:3px;line-height:1.12}
  .mobile-dock button span{display:grid;place-items:center;width:34px;height:34px;background:#0bd5d4;border-radius:50%;font-size:21px;margin:0 auto;color:#fff}
  .mobile-dock button.active{background:#1676b5}
- .mobile-dock button[data-dock="more"] span{font-size:23px;font-weight:800}
  .mobile-dock .dock-plus{position:relative;z-index:2;font-size:11px;color:white}
  .mobile-dock .dock-plus span{width:79px;height:79px;margin:-40px auto -7px;display:grid;place-items:center;border:5px solid white;border-radius:50%;background:#23a642;color:#fff;font-size:48px;font-weight:700;box-shadow:0 0 0 3px #269c48,0 3px 12px #132e4e66}
  .mobile-dock button:not(.dock-plus):active span{background:#05a9b6}
@@ -454,4 +453,12 @@ body{background:#e7edf3;color:#173e65;font-size:15px}
  .attribute-event h2{font-size:21px}
  .attribute-event>p{font-size:15px}
  .attribute-event .choice{min-height:54px}
+}
+
+/* Navegacao com cinco botoes: dois atalhos, idade central, dois atalhos. */
+@media(max-width:700px){
+ .mobile-dock{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.25fr) minmax(0,1fr) minmax(0,1fr)}
+ .mobile-dock button{min-width:0;overflow:visible}
+ .mobile-dock button span.dock-caption{overflow:hidden;text-overflow:ellipsis;max-width:100%}
+ .topbar #openNavigation{flex-shrink:0}
 }
