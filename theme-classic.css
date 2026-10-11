@@ -433,3 +433,25 @@ body{background:#e7edf3;color:#173e65;font-size:15px}
  }
  html{scroll-padding-top:calc(222px + env(safe-area-inset-top, 0px) + var(--stats-sticky-size))}
 }
+
+/* Escolhas de melhora dos atributos, apresentadas como eventos de vida. */
+.attribute-event{text-align:center;color:#411627;padding-bottom:6px}
+.attribute-event .event-icon{font-size:36px;margin:4px auto 9px}
+.attribute-event .card-kicker{
+ border-radius:6px;background:linear-gradient(90deg,#fff7f3,#f33a11);
+ color:#fff;padding:12px 8px;text-align:right;
+ font-size:12px;font-weight:900;letter-spacing:.5px;
+}
+.attribute-event h2{font-size:24px;color:#581622;margin:18px 0 14px}
+.attribute-event>p{font-size:16px;color:#48202a;line-height:1.5;margin:15px 6px 22px}
+.event-attribute-meter{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:9px;text-align:left;padding:12px 4px 20px;color:#185986}
+.event-attribute-meter>span{font-weight:800;font-size:13px}
+.event-attribute-meter .retro-stat-meter{height:12px}
+.event-attribute-meter strong{font-weight:900}
+.attribute-event .choice{background:#0a80c3!important;color:#fff!important;border:0!important;border-radius:9px!important;box-shadow:0 4px 0 #8b9dae;margin:8px 0;min-height:52px;font-size:15px;font-weight:750;text-align:center;display:block;width:100%}
+.attribute-event .section-title{margin:8px 0 16px;background:transparent;text-align:center}
+@media(max-width:700px){
+ .attribute-event h2{font-size:21px}
+ .attribute-event>p{font-size:15px}
+ .attribute-event .choice{min-height:54px}
+}
