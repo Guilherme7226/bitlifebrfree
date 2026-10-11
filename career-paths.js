@@ -265,7 +265,7 @@ function renderMartial(g){
  ensure(g);
  const inventory=MARTIAL.map(a=>({art:a,stats:g.extra.martialArts[a.id]}));
  const trained=inventory.filter(({stats})=>stats?.trainings>0).length;
- return displayTitle('🥋 Hobbies e artes marciais','Treine uma modalidade, evolua seu nível e participe de competições fictícias.')+
+ return displayTitle('🥋 Hobbies e artes marciais','Treine uma modalidade, evolua seu nível e desbloqueie golpes para interações fictícias.')+
  '<div class="martial-overview"><strong>'+trained+' / '+MARTIAL.length+' modalidades praticadas</strong><p>Treine quantas vezes quiser por ano. Seu talento e a sorte influenciam a evolução. Crianças treinam sem custo; adultos pagam a aula.</p></div>'+
  '<div class="martial-grid">'+inventory.map(({art:a,stats:r})=>{
   const skill=r?.skill||0,trainings=r?.trainings||0,wins=r?.wins||0,medals=r?.medals||0;
@@ -274,6 +274,7 @@ function renderMartial(g){
   return '<article class="martial-card"><div class="martial-head"><span>'+a.emoji+'</span><div><strong>'+a.name+'</strong><small>'+levelName(a,skill)+'</small></div></div>'+
    '<div class="service-progress"><span style="width:'+skill+'%"></span></div>'+
    '<p>Habilidade '+skill+'/100 · Talento '+(window.CaminhosSkills?.talent(g,'martial-'+a.id)??50)+'% · '+trainings+' treino(s) · '+wins+' vitórias · '+medals+' medalha(s)</p>'+
+   '<p class="martial-move-status">🥊 Golpes: '+(combatMoves(g).filter(m=>m.art===a.name).map(m=>m.name).join(', ')||'treine para desbloquear técnicas')+'</p>'+
    '<div class="mini-buttons"><button class="secondary-button" data-path-act="martial-train" data-id="'+a.id+'" '+(canTrain?'':'disabled')+'>Treinar'+(g.age>=16?' · '+brl(a.cost):'')+'</button>'+
    '<button class="secondary-button" data-path-act="martial-compete" data-id="'+a.id+'" '+(canCompete?'':'disabled')+'>🏅 Competir</button></div>'+
    (g.age<a.minAge?'<p class="tiny-note">A partir dos '+a.minAge+' anos.</p>':'')+
