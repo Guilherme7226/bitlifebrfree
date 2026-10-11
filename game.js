@@ -249,6 +249,84 @@ function relationshipFeedback(p,action,message,oldBond,oldCash){
  '<span>Humor: '+mood+'</span>'+cashRow+'</div>'+
  '<button type="button" class="secondary-button relationship-result-close" data-act="dismiss-result">Entendi</button></div>');
 }
+function chooseStrike(id){
+ if(!game?.alive||game.age<6)return showToast('Esta interação fica disponível a partir dos 6 anos.');
+ if(game.pendingEvent)return showEvent();
+ if(safeExtra().prison>0)return showToast('Você não pode iniciar uma agressão enquanto está preso.');
+ const person=game.people.find(x=>Number(x.id)===Number(id));
+ if(!person)return;
+ const moves=window.CaminhosPaths?.combatMoves(game)||[];
+ const trained=moves.filter(m=>m.art!=='Básico');
+ showModal('<div class="combat-dialog"><div class="combat-dialog-icon">🥊</div>'+
+  '<div class="card-kicker">INTERAÇÃO · CONSEQUÊNCIAS</div>'+
+  '<h2 id="modalTitle">Agredir '+escapeHTML(person.name)+'?</h2>'+
+  '<p>Escolha o movimento do personagem. Golpes mais avançados são desbloqueados ao praticar artes marciais. A vítima pode reagir, se ferir ou denunciar você.</p>'+
+  '<div class="combat-divider">Golpes básicos</div>'+
+  '<div class="combat-options">'+moves.map(move=>
+   '<button type="button" class="combat-option" data-act="choose-strike" data-id="'+Number(person.id)+'" data-move="'+escapeHTML(move.id)+'">'+
+   '<span class="combat-option-emoji">'+move.emoji+'</span><span><strong>'+escapeHTML(move.name)+'</strong>'+
+   '<small>'+escapeHTML(move.art)+' · Potência '+move.power+'/5'+(move.skill?' · Habilidade '+move.skill+'/100':'')+'</small></span>'+
+   '<span class="combat-option-next">›</span></button>'+
+   (move.art!=='Básico'?'':'')
+  ).join('')+'</div>'+
+  (trained.length===0?'<p class="combat-hint">🥋 Treine jiu-jítsu, judô, boxe e outras artes marciais em Atividades para desbloquear novos golpes.</p>':'')+
+  '<button type="button" class="secondary-button combat-cancel" data-act="dismiss-result">Cancelar</button></div>');
+}
+function performStrike(id,moveId){
+ if(!game?.alive||game.age<6||safeExtra().prison>0)return;
+ if(game.pendingEvent)return showEvent();
+ const person=game.people.find(x=>Number(x.id)===Number(id));
+ const move=(window.CaminhosPaths?.combatMoves(game)||[]).find(m=>m.id===moveId);
+ if(!person||!move)return showToast('Este golpe ainda não está disponível. Continue treinando.');
+ const e=safeExtra();const data=(e.combatEncounters||={});
+ const key=String(person.id);
+ const counter=data[key]?.year===game.age?data[key].count:0;
+ data[key]={year:game.age,count:counter+1};
+ const oldBond=clamp(person.bond);
+ const oldCash=game.cash;
+ const skill=Math.max(0,move.skill||0);
+ const power=Math.max(1,move.power);
+ // Combate é resolvido por chance, como evento narrativo; treinos melhoram
+ // a chance de êxito, mas nunca eliminam riscos e repercussões.
+ const successful=Math.random()<Math.max(.22,Math.min(.88,.45+skill*.004+(game.stats.saude-50)*.001));
+ const injury=successful?Math.max(1,Math.round(power*2+Math.random()*(power*3+2))):0;
+ const serious=successful&&power>=4&&Math.random()<(power===5?.10:.045);
+ const retaliation=Math.random()<Math.min(.85,.34+counter*.11+(successful?.02:.16));
+ const damage=retaliation?Math.round(3+Math.random()*12+counter*2):0;
+ person.bond=clamp(oldBond-(counter?18:12)-power*2-Math.round(Math.random()*8));
+ person.irritation=clamp((person.irritation||0)+25+power*6);
+ if(!Number.isFinite(person.health))person.health=85;
+ person.health=clamp(person.health-injury*(serious?2:1));
+ statChange({felicidade:-Math.min(14,5+counter*2),saude:-damage});
+ let title=successful?'Você agrediu '+person.name:'A agressão não deu certo';
+ let story=successful?'Você tentou usar '+move.name.toLowerCase()+' em '+person.name+'. '+person.name+
+  (serious?' sofreu um ferimento grave e precisou de atendimento médico.':
+   ' sofreu consequências físicas da agressão.') :
+  'Você tentou usar '+move.name.toLowerCase()+' contra '+person.name+', mas não conseguiu atingir o alvo.';
+ if(retaliation)story+=' '+person.name+' reagiu e você perdeu '+damage+' pontos de Saúde.';
+ const chanceToReport=Math.min(.96,.24+power*.065+(counter*.14)+(serious?.3:0));
+ let legal='';if(Math.random()<chanceToReport){
+  if(game.age>=16&&Math.random()<Math.min(.85,.27+power*.055+(serious?.25:0)+counter*.06)){
+   const years=serious?rand(2,5):rand(1,2);
+   const fine=serious?rand(2500,8000):rand(350,1800);
+   window.CaminhosWorld?.jail(game,'agressão física',years,fine);
+   legal=' A vítima denunciou o caso, houve condenação e você recebeu pena de '+years+' ano(s) de prisão e multa.';
+  }else if(game.age>=16){
+   if(!Array.isArray(e.crimeStory?.cases))window.CaminhosWorld?.ensure(game);
+   e.crimeStory.cases.push({title:'agressão física',heat:Math.min(.9,.3+power*.10),penalty:[1,serious?5:2],fine:serious?4500:700});
+   legal=' A polícia foi informada, e você poderá responder a uma investigação.';
+  }else{
+   statChange({felicidade:-5});
+   legal=' A família e a escola foram informadas e você recebeu uma advertência.';
+  }
+ }
+ story+=legal+' O relacionamento caiu de '+oldBond+' para '+person.bond+'/100.';
+ logLine('Conflito com '+person.name,story);
+ // Salvar verifica imediatamente o fim da vida se a Saúde chegou a zero.
+ if(!game.alive)return;
+ render();
+ relationshipFeedback(person,title,story,oldBond,oldCash);
+}
 function relationAction(id,action){
  if(!game?.alive)return showToast('Escolha uma vida para continuar.');
  if(game.pendingEvent)return showEvent();
@@ -257,6 +335,7 @@ function relationAction(id,action){
  const oldBond=clamp(p.bond),oldCash=game.cash;
  let title='',message='';
  const log=(entry,desc)=>{logLine(entry,desc);save();render();relationshipFeedback(p,title,message,oldBond,oldCash)};
+ if(action==='agredir')return chooseStrike(id);
  if(action==='casar'){
   if(game.age<18||Number(id)!==Number(game.partnerId)||p.bond<65)return showToast('É preciso ter 18 anos e vínculo de 65 ou mais para casar.');
   if(game.cash<3500)return showToast('Você precisa de R$ 3.500 para o casamento.');
@@ -581,7 +660,7 @@ $('newGameForm').addEventListener('submit',e=>{e.preventDefault();const f=new Fo
 $('nextYear').addEventListener('click',advance);$('openNavigation').addEventListener('click',openMoreMenu);$('homeShortcut').addEventListener('click',()=>{activeTab='vida';render();window.scrollTo({top:0,behavior:'smooth'})});$('openSettings').addEventListener('click',showSettings);$('closeModal').addEventListener('click',hideModal);$('brandHome').addEventListener('click',e=>{e.preventDefault();activeTab='vida';render();window.scrollTo({top:0,behavior:'smooth'})});
 document.addEventListener('submit',e=>{if(e.target.id!=='aiConfigForm')return;e.preventDefault();const endpoint=$('aiEndpoint').value.trim();if(endpoint&&(!/^https:\/\//i.test(endpoint)||endpoint.length>240))return showToast('Use uma URL HTTPS válida para seu Worker.');config.endpoint=endpoint;config.enableAI=$('aiEnabled').checked&&!!endpoint;persistConfig();render();showToast('Configuração da IA salva.')});
 document.addEventListener('change',e=>{if(e.target.id==='importSave')importSave(e.target.files?.[0])});
-document.addEventListener('click',e=>{const tab=e.target.closest('[data-tab]');if(tab){activeTab=tab.dataset.tab;render();return}const b=e.target.closest('[data-act]');if(!b)return;const act=b.dataset.act,id=b.dataset.id,option=b.dataset.option;if(act==='attribute-boost')openAttributeOpportunity(b.dataset.stat);if(act==='dismiss-result')hideModal();if(act==='activity')performAction(id);if(act==='job')setJob(id);if(act==='quit-job'){if(confirm('Deseja realmente pedir demissão?')){window.CaminhosPaths?.leave(game);game.job=null;game.jobYears=0;logLine('Mudança de planos','Você decidiu sair do emprego.');render()}}if(act==='university')startUniversity(id);if(act==='romance')romance();if(act==='rel')relationAction(Number(id),option);if(act==='money'){let n=b.dataset.value==='all'?game.savings:Number(b.dataset.value);moneyAction(option,n)}if(act==='choice')applyChoice(Number(b.dataset.index));if(act==='show-event')showEvent();if(act==='tutorial')showTutorial();if(act==='game-settings')showSettings();if(act==='save-now')window.CaminhosCloud?.manualSave();if(act==='export')downloadSave();if(act==='restart')restartLife();if(act==='inherit'){if(!game?.alive&&window.CaminhosDynasty?.chooseHeir(game,Number(id))){save();hideModal();activeTab='vida';render();showToast('🌳 A história continua com '+game.name+'!')}}if(act==='account-achievements')showModal(window.CaminhosAchievements?.render(game)||'Conquistas indisponíveis.');if(act==='ai-now')generateNow()});
+document.addEventListener('click',e=>{const tab=e.target.closest('[data-tab]');if(tab){activeTab=tab.dataset.tab;render();return}const b=e.target.closest('[data-act]');if(!b)return;const act=b.dataset.act,id=b.dataset.id,option=b.dataset.option;if(act==='attribute-boost')openAttributeOpportunity(b.dataset.stat);if(act==='dismiss-result')hideModal();if(act==='activity')performAction(id);if(act==='job')setJob(id);if(act==='quit-job'){if(confirm('Deseja realmente pedir demissão?')){window.CaminhosPaths?.leave(game);game.job=null;game.jobYears=0;logLine('Mudança de planos','Você decidiu sair do emprego.');render()}}if(act==='university')startUniversity(id);if(act==='romance')romance();if(act==='rel')relationAction(Number(id),option);if(act==='choose-strike')performStrike(Number(id),b.dataset.move);if(act==='money'){let n=b.dataset.value==='all'?game.savings:Number(b.dataset.value);moneyAction(option,n)}if(act==='choice')applyChoice(Number(b.dataset.index));if(act==='show-event')showEvent();if(act==='tutorial')showTutorial();if(act==='game-settings')showSettings();if(act==='save-now')window.CaminhosCloud?.manualSave();if(act==='export')downloadSave();if(act==='restart')restartLife();if(act==='inherit'){if(!game?.alive&&window.CaminhosDynasty?.chooseHeir(game,Number(id))){save();hideModal();activeTab='vida';render();showToast('🌳 A história continua com '+game.name+'!')}}if(act==='account-achievements')showModal(window.CaminhosAchievements?.render(game)||'Conquistas indisponíveis.');if(act==='ai-now')generateNow()});
 game=restore();if(game)window.CaminhosDynasty?.ensure(game);render();
 
 // Navegação auxiliar e ações dos módulos avançados.
