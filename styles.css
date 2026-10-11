@@ -171,3 +171,45 @@
  .tutorial-section .primary-button{width:100%;min-height:47px}
  .modal{max-height:calc(94dvh - env(safe-area-inset-top));}
 }
+/* CAMINHOS — mesmos atalhos de ajuda e cabecalho fixo no desktop. */
+@media (min-width:701px){
+ html{scroll-padding-top:246px}
+ .topbar{
+   position:sticky;
+   top:0;
+   z-index:80;
+   background:#0d1427f5;
+   backdrop-filter:blur(14px);
+   -webkit-backdrop-filter:blur(14px);
+   border-bottom:1px solid #364562;
+   justify-content:flex-start;
+   gap:16px;
+ }
+ .topbar .top-right{margin-left:auto}
+ .nav-toggle{display:grid;place-items:center;flex:none}
+ .profile-banner{
+   position:sticky;
+   top:88px;
+   z-index:70;
+   box-shadow:0 12px 26px #07102682;
+ }
+ .desktop-help-links{display:grid;gap:7px;margin:14px 0}
+ .desktop-help-link{
+   display:flex;gap:9px;align-items:center;
+   padding:12px 14px;
+   width:100%;
+   min-height:44px;
+   background:#263a5e;
+   border:1px solid #435a83;
+   color:#e4edff;
+   text-align:left;
+   border-radius:12px;
+   font-size:12px;
+   font-weight:700;
+ }
+ .desktop-help-link:hover,.desktop-help-link:focus-visible{background:#355582;outline:2px solid #8aabed;outline-offset:2px}
+ .content-panel{scroll-margin-top:246px}
+}
+@media (max-width:700px){
+ .desktop-help-links{display:none}
+}
