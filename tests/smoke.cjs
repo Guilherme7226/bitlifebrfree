@@ -172,7 +172,7 @@ const iosCss=fs.readFileSync('theme-classic.css','utf8');
 assert.match(iosCss,/height:calc\(64px \+ env\(safe-area-inset-top, 0px\)\)/,'cabeçalho respeita barra de status');
 assert.match(iosCss,/padding-top:env\(safe-area-inset-top, 0px\)/,'reserva vertical segura do iPhone');
 assert.match(iosCss,/top:calc\(159px \+ env\(safe-area-inset-top, 0px\)\)/,'título fixo não invade o cabeçalho');
-assert.match(fs.readFileSync('index.html','utf8'),/theme-classic\.css\?v=20261011-social-extended/,'cache do iPhone atualizado');
+assert.match(fs.readFileSync('index.html','utf8'),/theme-classic\.css\?v=20261011-combate/,'cache do iPhone atualizado');
 assert.doesNotMatch(fs.readFileSync('index.html','utf8'),/data-tab="escola"|data-tab="hobbies"/,'school and martial arts accessed in relevant parent sections');
 const statusCss=fs.readFileSync('theme-classic.css','utf8');
 assert.match(statusCss,/\.game>\.stats-strip\{\s*order:1;/,'status aparecem antes do diario no iPhone');
@@ -245,7 +245,7 @@ assert.doesNotMatch(code("window.CaminhosSkills.render(game)"),/Sorte:|🍀/,'ha
 assert.doesNotMatch(code("window.CaminhosEveryday.renderMenu(game)"),/Sorte:\\s*\\d+|🍀/,'atividades nao mostram percentual da sorte');
 assert.match(fs.readFileSync('skills.js','utf8'),/const luck=g\.extra\.luck/,'talento ainda usa sorte nos calculos');
 assert.match(fs.readFileSync('everyday.js','utf8'),/const prob=\(g\.extra\.luck/,'loteria ainda usa sorte interna');
-assert.match(fs.readFileSync('index.html','utf8'),/ui-familiar\.js\?v=20261011-social-extended/,'iPhone recebe o layout atualizado');
+assert.match(fs.readFileSync('index.html','utf8'),/ui-familiar\.js\?v=20261011-combate/,'iPhone recebe o layout atualizado');
 // User interface must preserve four general attributes and show only applicable career stats.
 const four=code("window.CaminhosUI.renderStats(game)");
 assert.equal((four.match(/class="retro-stat-row retro-stat-action"/g)||[]).length,4,
@@ -276,7 +276,7 @@ const cssFixed=fs.readFileSync('theme-classic.css','utf8');
 assert.match(cssFixed,/position:sticky;[\s\S]*top:calc\(159px \+ env\(safe-area-inset-top, 0px\)\)/,
  'stats remain visible under iPhone notch during scroll');
 assert.match(cssFixed,/--stats-sticky-size:79px/,'sticky reserved space for core stats');
-assert.match(fs.readFileSync('index.html','utf8'),/game\.js\?v=20261011-social-extended/,
+assert.match(fs.readFileSync('index.html','utf8'),/game\.js\?v=20261011-combate/,
  'new game logic cache busted');
 
 
@@ -366,7 +366,49 @@ assert.match(uiExtended,/'acordo'/,'item sale is a social action');
 assert.match(uiExtended,/'insultar'/,'insult is available');
 assert.match(uiExtended,/'espiar'/,'spying is available');
 assert.match(uiExtended,/social-option-body/,'social profiles show descriptions like the reference');
-assert.match(fs.readFileSync('index.html','utf8'),/game\.js\?v=20261011-social-extended/,
+assert.match(fs.readFileSync('index.html','utf8'),/game\.js\?v=20261011-combate/,
  'updated social actions are uncached on mobile');
+
+
+// Agressao ficcional com golpes basicos ou desbloqueados por arte marcial.
+code("startGame('Teste de Combate','Santos, SP','curioso')");
+code("game.age=26;game.cash=10000;game.stats.saude=100;game.people[0].bond=91;game.people[0].irritation=0");
+const basics=code('window.CaminhosPaths.combatMoves(game)');
+assert.deepEqual(Array.from(basics.map(m=>m.name)),['Tapa','Empurrão','Soco simples'],
+ 'sem treinamento, o personagem conhece somente golpes basicos');
+code("chooseStrike(1)");
+let attackDialog=code("document.getElementById('modalContent').innerHTML");
+assert.match(attackDialog,/Golpes básicos/,'abertura do popup de ataque');
+assert.match(attackDialog,/Soco simples/,'mostra golpe basico');
+assert.doesNotMatch(attackDialog,/Golpes aprendidos/,'sem golpes avancados nao mostra lista de artes marciais');
+const forbiddenBefore=code('game.people[0].bond');
+code("performStrike(1,'imobilizacao')");
+assert.equal(code('game.people[0].bond'),forbiddenBefore,
+ 'golpe ainda nao aprendido nao pode ser usado mesmo por tentativa direta');
+code("window.CaminhosPaths.martialAction(game,'jiujitsu','train')");
+assert.ok(code("game.extra.martialArts.jiujitsu.trainings")>=1,'treino de jiu jitsu registrado');
+code("game.extra.martialArts.jiujitsu.skill=65;game.extra.martialArts.jiujitsu.trainings=15");
+const learned=code("window.CaminhosPaths.combatMoves(game)");
+assert.ok(learned.some(m=>m.id==='queda'),'queda liberada no nivel intermediario');
+assert.ok(learned.some(m=>m.id==='imobilizacao'),'imobilizacao liberada ao evoluir no jiu jitsu');
+assert.ok(!learned.some(m=>m.id==='gancho'),'boxe nao desbloqueado sem treino');
+code("chooseStrike(1)");
+attackDialog=code("document.getElementById('modalContent').innerHTML");
+assert.match(attackDialog,/Golpes aprendidos/,'separa opcoes tecnicas');
+assert.match(attackDialog,/Imobilização/,'golpe avancado aparece no popup');
+const beforeBondAttack=code('game.people[0].bond');
+code("performStrike(1,'imobilizacao')");
+assert.ok(code('game.people[0].bond')<beforeBondAttack,'agressao afeta relacionamento negativamente');
+assert.ok(code('game.people[0].irritation')>0,'pessoa agredida fica irritada');
+assert.equal(code('game.extra.combatEncounters["1"].count'),1,'contador de agressao salvo por ano');
+assert.match(code('game.history[0].title'),/Conflito com/,'agressao registrada no diario');
+assert.match(code("document.getElementById('modalContent').innerHTML"),/Relacionamento|vínculo|Vínculo/,
+ 'pop up confirma impacto na relacao');
+assert.match(fs.readFileSync('ui-familiar.js','utf8'),/'agredir','🥊'/,
+ 'agressao disponivel no perfil da pessoa');
+assert.match(fs.readFileSync('game.js','utf8'),/CaminhosWorld\?\.jail\(game,'agressão física'/,
+ 'risco de condenacao e prisão implementado');
+assert.match(fs.readFileSync('index.html','utf8'),/career-paths\.js\?v=20261011-combate/,
+ 'cache de golpes atualizado para iPhone');
 
 console.log('OK: escola, amigos, professores, bens, empresas, venda, salvamento e navegação.');
