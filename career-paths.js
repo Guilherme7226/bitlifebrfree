@@ -48,14 +48,14 @@ function entryReason(g,id,route='praca'){
  if(g.extra?.prison>0)return 'Não é possível ingressar enquanto cumpre pena.';
  if(!g.extra?.school?.finished)return 'Conclua o ensino médio.';
  if(g.stats.saude<(id==='policial_federal'?62:55))return 'Saúde insuficiente para os testes físicos.';
- if(g.stats.disciplina<(p.type==='civil'?57:53))return 'Requer mais disciplina.';
+ if((p.type==='civil'?g.stats.inteligencia:g.stats.saude)<(p.type==='civil'?57:53))return 'Requer mais preparo físico ou conhecimento técnico.';
  if(id==='policial_federal'&&!hasDegree(g))return 'Polícia Federal exige uma graduação no jogo.';
  if(id==='policial_federal'&&g.stats.inteligencia<68)return 'Polícia Federal requer 68 de inteligência.';
  if(id==='policial_civil'&&g.stats.inteligencia<55)return 'Polícia Civil requer 55 de inteligência.';
  if(route==='oficial'){
    if(p.type!=='militar')return 'Trilha de oficial indisponível nesta corporação.';
    if(g.stats.inteligencia<68)return 'Formação de oficial requer inteligência 68.';
-   if(g.stats.disciplina<65)return 'Formação de oficial requer disciplina 65.';
+   if(g.stats.inteligencia<65)return 'Formação de oficial requer inteligência 65.';
  }
  return '';
 }
@@ -131,7 +131,7 @@ function onAnnual(g){
    s.years++;s.yearsAtRank++;s.merit=clamp(s.merit+rand(-3,3));
    const p=svc(s.id);const ranks=s.route==='oficial'?p.oficiais:p.pracas;
    const required=s.rank>=3?3:2;
-   if(s.rank<ranks.length-1&&s.yearsAtRank>=required&&s.merit>=55&&g.stats.disciplina>=55){
+   if(s.rank<ranks.length-1&&s.yearsAtRank>=required&&s.merit>=55&&g.stats.saude>=55){
      s.rank++;s.yearsAtRank=0;s.merit=clamp(s.merit-18);
      noteAnnual('Promoção na carreira', 'Você foi promovido em '+p.name+' a '+rankName(g)+'!');
    }
@@ -260,7 +260,7 @@ function martialAction(g,id,act){
  if(act==='compete'){
    if(g.age<12||r.skill<35)return showToast('Para competir, você precisa ter 12 anos e 35 de habilidade.');
    g.cash-=price;
-   const success=Math.random()<Math.min(.92,.2+r.skill*.006+g.stats.disciplina*.002);
+   const success=Math.random()<Math.min(.92,.2+r.skill*.006+g.stats.saude*.002);
    if(success){r.wins++;r.medals++;if(g.age>=18)g.cash+=rand(200,1400);statChange({felicidade:7,carisma:3});logLine('Campeonato de '+art.name,'Você venceu uma competição e conquistou uma medalha!')}
    else{statChange({felicidade:-3,disciplina:2});logLine('Competição de '+art.name,'Você participou, mas não venceu. A experiência vai ajudar no próximo torneio.')}
  }else{
