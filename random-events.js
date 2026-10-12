@@ -268,8 +268,8 @@ function choiceImpact(g,choice){
   info.push('Popularidade no clube: '+(fx.club>0?'+':'')+fx.club+'.');
  }
  if(Number.isFinite(fx.career)&&g.job){
-  g.jobYears=Math.max(0,(g.jobYears||0)+(fx.career>=14?1:0));
-  info.push(fx.career>=0?'Sua carreira ganhou oportunidades.':'Sua reputação no trabalho foi prejudicada.');
+  g.extra.careerMomentum=Math.max(-60,Math.min(75,(g.extra.careerMomentum||0)+fx.career));
+  info.push('Progresso profissional: '+(fx.career>0?'+':'')+fx.career+'.');
  }
  if(Number.isFinite(fx.popularity)){
   g.extra.reputation=Math.max(0,Math.min(100,(g.extra.reputation||30)+fx.popularity));
