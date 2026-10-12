@@ -688,9 +688,9 @@ code("game.age=14;game.pendingEvent=null;game.extra.storyEvents={recent:[],count
 const ids=[];
 for(let n=0;n<8;n++){const evt=code('window.CaminhosStories.pick(game)');ids.push(evt.scenario)}
 assert.equal(new Set(ids).size,8,'evita repetir a mesma historia em anos consecutivos');
-const html=fs.readFileSync('index.html','utf8');
-assert.match(html,/random-events\.js\?v=20261012-historias-ampliadas/,'novo modulo e carregado no iPhone');
-assert.match(html,/game\.js\?v=20261012-historias-ampliadas/,'logica de escolhas paga sem cache anterior');
+const storyPageHTML=fs.readFileSync('index.html','utf8');
+assert.match(storyPageHTML,/random-events\.js\?v=20261012-historias-ampliadas/,'novo modulo e carregado no iPhone');
+assert.match(storyPageHTML,/game\.js\?v=20261012-historias-ampliadas/,'logica de escolhas paga sem cache anterior');
 assert.match(fs.readFileSync('.github/workflows/pages.yml','utf8'),/node --check random-events\.js/,
  'validacao de javascript inclui catalogo de eventos');
 
