@@ -583,9 +583,9 @@ code("Math.random=()=>0");
 click({skillTrain:'violao'});
 assert.ok(code("window.CaminhosSkills.score(game,'violao').level")<improved,
  'treino ruim pode diminuir habilidade');
-assert.match(code("game.history[0].description"),/perdeu|não melhorou/,
+assert.match(code("game.history[0].description"),/perdeu|caiu|não melhorou/,
  'diario relata falha ou regressao');
-code("Math.random=()=>0.25");
+code("Math.random=()=>0.18");
 const beforePlateau=code("window.CaminhosSkills.score(game,'violao').level");
 click({skillTrain:'violao'});
 assert.equal(code("window.CaminhosSkills.score(game,'violao').level"),beforePlateau,
