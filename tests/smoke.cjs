@@ -651,7 +651,7 @@ code("game.age=30;game.cash=0;game.alive=true;game.pendingEvent=null");
 code("game.pendingEvent={source:'story',title:'Curso importante',story:'Uma oportunidade de estudar',choices:[{text:'Pagar o curso',delta:{inteligencia:24,felicidade:10,cash:-1800}},{text:'Estudar sozinho',delta:{inteligencia:12,felicidade:3}},{text:'Recusar',delta:{felicidade:-6}}]}");
 code('showEvent()');
 const expensive=code("document.getElementById('modalContent').innerHTML");
-assert.match(expensive,/Custa R\$ 1\.800/,'preco exibido na janela antes da escolha');
+assert.match(expensive,/Custa R\$\s*1\.800/,'preco exibido na janela antes da escolha');
 assert.match(expensive,/Saldo insuficiente/,'alternativa paga bloqueada sem dinheiro');
 assert.match(expensive,/Estudar sozinho/,'alternativa gratuita continua disponivel');
 code('applyChoice(0)');
