@@ -156,12 +156,13 @@ function execute(g,id){
   const outcome=window.CaminhosSkills?.practice(g,'academia');
   if(outcome?.kind==='setback'){
    small('saude',-2);small('felicidade',-2);
-   desc='Você treinou, mas sentiu cansaço e errou a execução. O condicionamento piorou um pouco.';
-  }else if(outcome?.kind==='plateau'){
-   desc='Você concluiu o treino, mas não notou progresso nesta sessão.';
+   desc='Treino ruim! Você ficou cansado(a), cometeu erros e perdeu condicionamento.';
+  }else if(outcome?.kind==='normal'){
+   small('saude',1);
+   desc='Treino normal. Você ganhou um pouco de condicionamento físico.';
   }else{
-   small('saude',Math.max(1,8-used*2));
-   desc='Você treinou e melhorou seu condicionamento.';
+   small('saude',Math.max(3,8-used*2));
+   desc='Treino bom! Você progrediu bastante no condicionamento físico.';
   }
   break;
  }
