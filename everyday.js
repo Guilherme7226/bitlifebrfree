@@ -134,8 +134,13 @@ function execute(g,id){
  if(id==='adotar-crianca'&&used>=1)return showToast('Você já realizou uma adoção neste ano.');
  if(id==='adotar-crianca'&&g.children>=12)return showToast('O limite familiar foi atingido nesta simulação.');
  const cost=opt[6];
- if(g.cash<cost)return showToast('Saldo insuficiente: '+brl(cost)+'.');
- g.cash-=cost;x.actionCounts[dateKey]=used+1;
+ if(id==='academia'&&g.age<18){
+  if(!window.CaminhosFamily?.pay(g,'skill-academia','academia',cost))return;
+ }else{
+  if(g.cash<cost)return showToast('Saldo insuficiente: '+brl(cost)+'.');
+  g.cash-=cost;
+ }
+ x.actionCounts[dateKey]=used+1;
  let desc='',delta={};
  const small=(key,n)=>{g.stats[key]=clamp100(g.stats[key]+n)};
  switch(id){
@@ -147,7 +152,19 @@ function execute(g,id){
  case 'viagem':small('felicidade',Math.max(2,12-used*2));x.travels++;desc='Você explorou novos lugares durante a viagem.';if(harm(g,'road'))return;break;
  case 'medico':x.treated++;if(x.illness){desc='O médico tratou '+x.illness.toLowerCase()+'. Você está se recuperando.';x.illness=null;x.illnessYears=0;small('saude',rnd(15,30))}else{small('saude',5);desc='Uma consulta de rotina ajudou a cuidar da saúde.'}break;
  case 'terapia':small('felicidade',Math.max(2,13-used*2));small('saude',4);desc='Você conversou com um profissional e se sentiu melhor.';break;
- case 'academia':small('saude',Math.max(1,8-used*2));small('disciplina',Math.max(1,4-used));window.CaminhosSkills?.practice(g,'academia');desc='Você treinou e melhorou seu condicionamento.';break;
+ case 'academia':{
+  const outcome=window.CaminhosSkills?.practice(g,'academia');
+  if(outcome?.kind==='setback'){
+   small('saude',-2);small('felicidade',-2);
+   desc='Você treinou, mas sentiu cansaço e errou a execução. O condicionamento piorou um pouco.';
+  }else if(outcome?.kind==='plateau'){
+   desc='Você concluiu o treino, mas não notou progresso nesta sessão.';
+  }else{
+   small('saude',Math.max(1,8-used*2));
+   desc='Você treinou e melhorou seu condicionamento.';
+  }
+  break;
+ }
  case 'meditacao':small('felicidade',Math.max(1,7-used));desc='Você dedicou um tempo para meditar.';break;
  case 'loteria':{const prob=(g.extra.luck||50)/20000;const win=Math.random()<prob;if(win){const prize=rnd(1000,150000);g.cash+=prize;x.lotteryWins++;desc='Sorte grande! Você ganhou '+brl(prize)+' na loteria.'}else desc='Você comprou um bilhete, mas não foi premiado.';break;}
  case 'processar':{const success=Math.random()<(.2+g.stats.inteligencia/250);if(success){const prize=rnd(1000,7500);g.cash+=prize;desc='Você venceu o processo e recebeu '+brl(prize)+'.'}else{const fees=rnd(250,1100);g.cash-=fees;desc='Você perdeu a ação e precisou pagar '+brl(fees)+' em custas.';}break;}
@@ -174,7 +191,10 @@ function renderMenu(g){
    const opt=THINGS.find(x=>x[0]===id);if(!opt)continue;
    const [,icon,title,desc,,min,cost]=opt;
    const disabled=!g.alive||g.age<min||g.extra?.prison>0;
-   const detail=desc+(g.age<min?' · A partir dos '+min+' anos':cost>0?' · '+brl(cost):'');
+   const familyGym=id==='academia'&&g.age<18?
+    window.CaminhosFamily?.state(g,'skill-academia',cost):null;
+   const costText=familyGym?(familyGym.approved?' · Família paga '+brl(familyGym.cost):' · Precisa de autorização dos pais'):(cost>0?' · '+brl(cost):'');
+   const detail=desc+(g.age<min?' · A partir dos '+min+' anos':costText);
    html+='<button type="button" class="retro-menu-row'+(disabled?' retro-disabled':'')+'" data-everyday="'+id+'" '+(disabled?'disabled':'')+'><span class="retro-row-symbol">'+icon+'</span><span class="retro-row-copy"><strong>'+esc(title)+'</strong><span>'+esc(detail)+'</span></span><span class="retro-row-end">›</span></button>';
   }
  }
