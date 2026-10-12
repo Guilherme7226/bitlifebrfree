@@ -47,19 +47,38 @@ function talent(g,id){
 }
 function score(g,id){ensure(g);return g.extra.skills[id]||{level:0,trainings:0,records:0}}
 function practice(g,id,opts={}){
- ensure(g);const t=talent(g,id),counter=g.extra.skillPractice.counts;
+ ensure(g);
+ const t=talent(g,id),counter=g.extra.skillPractice.counts;
  const times=counter[id]||0;
- // Treinos ilimitados por ano com retornos gradualmente menores.
- // Talento determina a velocidade; sorte ocasionalmente gera um treino excepcional.
- const luck=g.extra.luck||50;
- const extraordinary=Math.random()<(luck/650);
- const base=1.65+t/32;
- const gain=Math.max(1,Math.round(base/(1+times*.12)*(extraordinary?2.0:1)));
+ const prior=g.extra.skills[id]||{level:0,trainings:0,records:0};
+ const luck=g.extra.luck??50;
+ // O progresso não é garantido. Repetições seguidas elevam o cansaço,
+ // e uma sessão ruim pode causar estagnação ou pequena regressão.
+ const setbackChance=Math.min(.38,.07+(100-t)*.0009+times*.006);
+ const plateauChance=Math.min(.33,.12+times*.003);
+ const outcomeRoll=Math.random();
+ let raw=0,kind='plateau',extraordinary=false;
+ if(outcomeRoll<setbackChance){
+  raw=-Math.max(1,Math.round(1+Math.random()*2+Math.min(2,times/12)));
+  kind='setback';
+ }else if(outcomeRoll<setbackChance+plateauChance){
+  raw=0;kind='plateau';
+ }else{
+  extraordinary=Math.random()<(luck/650);
+  const base=1.65+t/32;
+  raw=Math.max(1,Math.round(base/(1+times*.12)*(extraordinary?1.8:1)));
+  kind='gain';
+ }
  counter[id]=times+1;
- const old=g.extra.skills[id]||{level:0,trainings:0,records:0};
- const level=Math.min(100,old.level+gain);
- g.extra.skills[id]={level,trainings:old.trainings+1,records:(old.records||0)+(extraordinary?1:0)};
- return {gain:level-old.level,level,talent:t,luck,extraordinary,trainings:old.trainings+1};
+ const level=Math.max(0,Math.min(100,prior.level+raw));
+ g.extra.skills[id]={level,trainings:prior.trainings+1,records:(prior.records||0)+(extraordinary?1:0)};
+ return {gain:level-prior.level,raw,level,talent:t,kind,luck,extraordinary,trainings:prior.trainings+1};
+}
+function lessonBase(spec){
+ if(spec[3]==='Instrumentos'||spec[3]==='Música e palco')return 110;
+ if(spec[3]==='Esportes')return 75;
+ if(spec[3]==='Artes e criatividade')return 70;
+ return 55;
 }
 function train(g,id){
  const spec=LIB.find(x=>x[0]===id);
@@ -68,30 +87,45 @@ function train(g,id){
  if(g.age<spec[4])return showToast('Disponível a partir dos '+spec[4]+' anos.');
  if(g.extra?.prison>0)return showToast('Esta atividade não está disponível durante uma pena de prisão.');
  if(g.pendingEvent)return showEvent();
- const cost=spec[5]||0;
- if(g.cash<cost)return showToast('Você precisa de '+brl(cost)+' para essa aula.');
- g.cash-=cost;
+ const key='skill-'+id;
+ const cost=g.age<18?lessonBase(spec):spec[5]||0;
+ if(!window.CaminhosFamily?.pay(g,key,spec[2],cost))return;
  const result=practice(g,id);
- const motivation=result.extraordinary?' Você teve um momento de sorte e aprendeu muito mais rápido!':'';
- if(id==='canto'||id==='composicao')g.stats.carisma=clamp(g.stats.carisma+1);
- if(['corrida','natacao','ciclismo','danca'].includes(id))g.stats.saude=clamp(g.stats.saude+1);
- if(['xadrez','programacao','escrita'].includes(id))g.stats.inteligencia=clamp(g.stats.inteligencia+1);
- logLine('Treino: '+spec[2], 'Você praticou '+spec[2].toLowerCase()+' e ganhou '+result.gain+' ponto(s) de habilidade.'+motivation);
+ let observation='';
+ if(result.kind==='gain'){
+  observation='Você praticou '+spec[2].toLowerCase()+' e melhorou '+result.gain+' ponto(s).'+
+   (result.extraordinary?' A sessão rendeu mais que o normal.':'');
+ }else if(result.kind==='setback'){
+  observation='Hoje o treino não saiu bem. Você cometeu erros, e sua habilidade '+(result.gain<0?'caiu '+Math.abs(result.gain)+' ponto(s).':'não melhorou.') ;
+ }else{
+  observation='Você praticou, mas não teve progresso nesta sessão. Talvez um descanso ajude.';
+ }
+ if(['corrida','natacao','ciclismo','danca'].includes(id)){
+  g.stats.saude=clamp(g.stats.saude+(result.kind==='setback'?-1:result.kind==='gain'?1:0));
+ }
+ if(['xadrez','programacao','escrita'].includes(id)&&result.kind==='gain')
+  g.stats.inteligencia=clamp(g.stats.inteligencia+1);
+ if(result.kind==='setback')g.stats.felicidade=clamp(g.stats.felicidade-1);
+ logLine('Treino: '+spec[2],observation);
  save();render();
- showToast('🎯 '+spec[2]+': '+result.level+'/100 · Talento natural '+result.talent+'%');
+ showToast('🎯 '+spec[2]+': '+result.level+'/100 · '+(result.gain>0?'+'+result.gain:result.gain)+' ponto(s)');
 }
 function renderSkills(g){
  ensure(g);
  const tabs=[...new Set(LIB.map(s=>s[3]))];
  return '<div class="retro-screen-bar"><button class="retro-screen-close" data-go="atividades" aria-label="Voltar às atividades">×</button><strong>Habilidades</strong><span>✦</span></div>'+
- '<div class="skill-intro"><strong>Pratique no seu ritmo</strong><p>Você pode praticar quantas vezes quiser no mesmo ano. Seu talento natural varia em cada atividade, e alguns treinos podem render resultados inesperadamente bons.</p></div>'+
+ '<div class="skill-intro"><strong>Pratique no seu ritmo</strong><p>Você pode treinar várias vezes no mesmo ano, mas também pode não evoluir ou perder habilidade. Menores de idade precisam de autorização e as aulas são pagas pela família.</p></div>'+
  tabs.map(category=>'<div class="retro-section-title">'+esc(category)+'</div>'+
  LIB.filter(s=>s[3]===category).map(s=>{
  const t=talent(g,s[0]),level=score(g,s[0]),can=g.age>=s[4]&&g.alive&&!g.pendingEvent&&!(g.extra.prison>0);
+ const family=window.CaminhosFamily?.state(g,'skill-'+s[0],lessonBase(s));
+ const courseHint=g.age<18?(family?.approved?' · A família paga '+brl(family.cost)+' por aula':
+  ' · Requer permissão dos pais'):'';
+ const label=g.age<18&&!family?.approved?'Pedir autorização':'Praticar';
  return '<div class="skill-card"><div class="skill-symbol">'+s[1]+'</div><div class="skill-details"><strong>'+esc(s[2])+'</strong>'+
- '<small>Habilidade '+level.level+'/100 · Talento natural '+t+'% · '+level.trainings+' treinos</small>'+
+ '<small>Habilidade '+level.level+'/100 · Talento natural '+t+'% · '+level.trainings+' treinos'+courseHint+'</small>'+
  '<div class="service-progress"><span style="width:'+level.level+'%"></span></div></div>'+
- '<button type="button" class="secondary-button" data-skill-train="'+s[0]+'" '+(can?'':'disabled')+'>Praticar</button></div>';
+ '<button type="button" class="secondary-button" data-skill-train="'+s[0]+'" '+(can?'':'disabled')+'>'+label+'</button></div>';
  }).join('')).join('')+
  '<div class="notice">Apenas jogos e oportunidades dependem do ano. Práticas e atividades cotidianas não têm limite anual, mas continuam sujeitas à idade, custos e condições do personagem.</div>';
 }
