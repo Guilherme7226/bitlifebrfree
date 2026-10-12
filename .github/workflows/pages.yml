@@ -22,12 +22,13 @@ jobs:
       - name: Validar arquivos e JavaScript
         run: |
           set -eu
-          for arq in index.html styles.css theme-classic.css game.js achievements.js dynasty.js skills.js everyday.js life-extras.js career-paths.js sim-world.js ui-familiar.js cloud.js cloud-config.js manifest.webmanifest app-icon.svg; do
+          for arq in index.html styles.css theme-classic.css game.js achievements.js dynasty.js family-support.js skills.js everyday.js life-extras.js career-paths.js sim-world.js ui-familiar.js cloud.js cloud-config.js manifest.webmanifest app-icon.svg; do
             test -s "$arq" || { echo "Arquivo ausente ou vazio: $arq"; exit 1; }
           done
           node --check game.js
           node --check achievements.js
           node --check dynasty.js
+          node --check family-support.js
           node --check skills.js
           node --check everyday.js
           node --check life-extras.js
@@ -40,7 +41,7 @@ jobs:
       - name: Empacotar somente arquivos publicos
         run: |
           mkdir -p _site
-          cp index.html styles.css theme-classic.css game.js achievements.js dynasty.js skills.js everyday.js life-extras.js career-paths.js sim-world.js ui-familiar.js cloud.js cloud-config.js manifest.webmanifest app-icon.svg _site/
+          cp index.html styles.css theme-classic.css game.js achievements.js dynasty.js family-support.js skills.js everyday.js life-extras.js career-paths.js sim-world.js ui-familiar.js cloud.js cloud-config.js manifest.webmanifest app-icon.svg _site/
           touch _site/.nojekyll
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v5
