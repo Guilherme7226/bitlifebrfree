@@ -48,31 +48,30 @@ function talent(g,id){
 function score(g,id){ensure(g);return g.extra.skills[id]||{level:0,trainings:0,records:0}}
 function practice(g,id,opts={}){
  ensure(g);
- const t=talent(g,id),counter=g.extra.skillPractice.counts;
- const times=counter[id]||0;
- const prior=g.extra.skills[id]||{level:0,trainings:0,records:0};
+ const naturalTalent=talent(g,id),counter=g.extra.skillPractice.counts;
+ const times=counter[id]||0,prior=g.extra.skills[id]||{level:0,trainings:0,records:0};
  const luck=g.extra.luck??50;
- // O progresso não é garantido. Repetições seguidas elevam o cansaço,
- // e uma sessão ruim pode causar estagnação ou pequena regressão.
- const setbackChance=Math.min(.38,.07+(100-t)*.0009+times*.006);
- const plateauChance=Math.min(.33,.12+times*.003);
- const outcomeRoll=Math.random();
- let raw=0,kind='plateau',extraordinary=false;
- if(outcomeRoll<setbackChance){
+ // Bom: evolucao expressiva. Normal: progresso pequeno. Ruim: regressao.
+ // Talento e sorte aumentam as boas sessoes; cansaco por repeticao faz o
+ // contrario, sem impedir o jogador de treinar quantas vezes quiser.
+ const badChance=Math.min(.30,.06+(100-naturalTalent)*.0007+times*.004);
+ const goodChance=Math.max(.12,Math.min(.62,.30+naturalTalent*.003+(luck-50)*.0008-times*.005));
+ const roll=Math.random();
+ let raw=0,kind='normal',extraordinary=false;
+ if(roll<badChance){
   raw=-Math.max(1,Math.round(1+Math.random()*2+Math.min(2,times/12)));
   kind='setback';
- }else if(outcomeRoll<setbackChance+plateauChance){
-  raw=0;kind='plateau';
+ }else if(roll>=1-goodChance){
+  kind='gain';extraordinary=Math.random()<(luck/650);
+  raw=Math.max(4,Math.round((5+naturalTalent/16)/(1+times*.025)*(extraordinary?1.4:1)));
  }else{
-  extraordinary=Math.random()<(luck/650);
-  const base=1.65+t/32;
-  raw=Math.max(1,Math.round(base/(1+times*.12)*(extraordinary?1.8:1)));
-  kind='gain';
+  kind='normal';
+  raw=1+(naturalTalent>=70&&Math.random()<.4?1:0);
  }
  counter[id]=times+1;
  const level=Math.max(0,Math.min(100,prior.level+raw));
  g.extra.skills[id]={level,trainings:prior.trainings+1,records:(prior.records||0)+(extraordinary?1:0)};
- return {gain:level-prior.level,raw,level,talent:t,kind,luck,extraordinary,trainings:prior.trainings+1};
+ return {gain:level-prior.level,raw,level,talent:naturalTalent,kind,luck,extraordinary,trainings:prior.trainings+1};
 }
 function lessonBase(spec){
  if(spec[3]==='Instrumentos'||spec[3]==='Música e palco')return 110;
@@ -93,17 +92,17 @@ function train(g,id){
  const result=practice(g,id);
  let observation='';
  if(result.kind==='gain'){
-  observation='Você praticou '+spec[2].toLowerCase()+' e melhorou '+result.gain+' ponto(s).'+
-   (result.extraordinary?' A sessão rendeu mais que o normal.':'');
+  observation='Treino bom! Você praticou '+spec[2].toLowerCase()+' e evoluiu bastante: +'+result.gain+' ponto(s).'+
+   (result.extraordinary?' Um momento de destaque ajudou você a melhorar ainda mais.':'');
  }else if(result.kind==='setback'){
-  observation='Hoje o treino não saiu bem. Você cometeu erros, e sua habilidade '+(result.gain<0?'caiu '+Math.abs(result.gain)+' ponto(s).':'não melhorou.') ;
+  observation='Treino ruim! Você cometeu erros e sua habilidade '+(result.gain<0?'caiu '+Math.abs(result.gain)+' ponto(s).':'não conseguiu evoluir.') ;
  }else{
-  observation='Você praticou, mas não teve progresso nesta sessão. Talvez um descanso ajude.';
+  observation='Treino normal. Você praticou '+spec[2].toLowerCase()+' e evoluiu um pouco: +'+result.gain+' ponto(s).';
  }
  if(['corrida','natacao','ciclismo','danca'].includes(id)){
-  g.stats.saude=clamp(g.stats.saude+(result.kind==='setback'?-1:result.kind==='gain'?1:0));
+  g.stats.saude=clamp(g.stats.saude+(result.kind==='setback'?-1:result.kind==='gain'?2:1));
  }
- if(['xadrez','programacao','escrita'].includes(id)&&result.kind==='gain')
+ if(['xadrez','programacao','escrita'].includes(id)&&result.gain>0)
   g.stats.inteligencia=clamp(g.stats.inteligencia+1);
  if(result.kind==='setback')g.stats.felicidade=clamp(g.stats.felicidade-1);
  logLine('Treino: '+spec[2],observation);
@@ -114,7 +113,7 @@ function renderSkills(g){
  ensure(g);
  const tabs=[...new Set(LIB.map(s=>s[3]))];
  return '<div class="retro-screen-bar"><button class="retro-screen-close" data-go="atividades" aria-label="Voltar às atividades">×</button><strong>Habilidades</strong><span>✦</span></div>'+
- '<div class="skill-intro"><strong>Pratique no seu ritmo</strong><p>Você pode treinar várias vezes no mesmo ano, mas também pode não evoluir ou perder habilidade. Menores de idade precisam de autorização e as aulas são pagas pela família.</p></div>'+
+ '<div class="skill-intro"><strong>Pratique no seu ritmo</strong><p>Treino bom: evolui bastante. Treino normal: evolui pouco. Treino ruim: pode perder pontos. Talento e cansaço influenciam os resultados. Menores precisam de autorização dos pais.</p></div>'+
  tabs.map(category=>'<div class="retro-section-title">'+esc(category)+'</div>'+
  LIB.filter(s=>s[3]===category).map(s=>{
  const t=talent(g,s[0]),level=score(g,s[0]),can=g.age>=s[4]&&g.alive&&!g.pendingEvent&&!(g.extra.prison>0);
