@@ -590,6 +590,21 @@ const beforePlateau=code("window.CaminhosSkills.score(game,'violao').level");
 click({skillTrain:'violao'});
 assert.equal(code("window.CaminhosSkills.score(game,'violao').level"),beforePlateau,
  'tambem existem treinos sem progresso');
+code("game.age=15;game.cash=0;game.extra.familySupport.funds=5000;Math.random=()=>0");
+click({everyday:'academia'});
+assert.equal(code("window.CaminhosSkills.score(game,'academia').trainings"),0,
+ 'adolescente deve solicitar autorizacao para academia');
+assert.ok(code("game.extra.familySupport.approved['skill-academia']"),
+ 'pais aprovaram a academia');
+const gymFunds=code("game.extra.familySupport.funds");
+click({everyday:'academia'});
+assert.equal(code("window.CaminhosSkills.score(game,'academia').trainings"),1,
+ 'academia foi realizada somente apos consentimento');
+assert.ok(code("game.extra.familySupport.funds")<gymFunds,
+ 'academia consome pequeno valor do orcamento familiar');
+assert.equal(code("game.cash"),0,'adolescente nao paga academia do proprio dinheiro');
+assert.match(code("window.CaminhosEveryday.renderMenu(game)"),/Família paga/,
+ 'interface indica pagamentos de academia pelos responsaveis');
 code("game.age=19;game.cash=1000;Math.random=()=>.8");
 const adultCash=code('game.cash');
 click({pathAct:'martial-train',id:'jiujitsu'});
