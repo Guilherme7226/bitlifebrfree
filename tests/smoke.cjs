@@ -586,10 +586,19 @@ assert.ok(code("window.CaminhosSkills.score(game,'violao').level")<improved,
 assert.match(code("game.history[0].description"),/perdeu|caiu|não melhorou/,
  'diario relata falha ou regressao');
 code("Math.random=()=>0.18");
-const beforePlateau=code("window.CaminhosSkills.score(game,'violao').level");
+const beforeNormal=code("window.CaminhosSkills.score(game,'violao').level");
 click({skillTrain:'violao'});
-assert.equal(code("window.CaminhosSkills.score(game,'violao').level"),beforePlateau,
- 'tambem existem treinos sem progresso');
+const normalPoints=code("window.CaminhosSkills.score(game,'violao').level")-beforeNormal;
+assert.ok(normalPoints>=1&&normalPoints<=2,
+ 'treino normal melhora pouco, de um a dois pontos');
+assert.match(code("game.history[0].description"),/Treino normal.*evoluiu um pouco/,
+ 'diario identifica treino normal');
+const trainingComparison=code("(()=>{const saveRandom=Math.random;try{Math.random=()=>.92;const good=window.CaminhosSkills.practice(game,'comparacao');Math.random=()=>.18;const normal=window.CaminhosSkills.practice(game,'comparacao');return {good,normal}}finally{Math.random=saveRandom}})()");
+assert.equal(trainingComparison.good.kind,'gain','treino bom deve ser identificado');
+assert.equal(trainingComparison.normal.kind,'normal','treino normal deve ser identificado');
+assert.ok(trainingComparison.good.gain>=4,'treino bom evolui bastante');
+assert.ok(trainingComparison.good.gain>trainingComparison.normal.gain,
+ 'treino bom tem ganho significativamente maior do que treino normal');
 code("game.age=15;game.cash=0;game.extra.familySupport.funds=5000;Math.random=()=>0");
 click({everyday:'academia'});
 assert.equal(code("window.CaminhosSkills.score(game,'academia').trainings"),0,
@@ -615,5 +624,12 @@ assert.match(fs.readFileSync('index.html','utf8'),/family-support\.js\?v=2026101
  'suporte aos pais incluido no bundle');
 assert.match(fs.readFileSync('.github/workflows/pages.yml','utf8'),/family-support\.js/,
  'modulo presente no deploy');
+
+assert.match(fs.readFileSync('index.html','utf8'),/skills\.js\?v=20261012-treinos-bom-normal/,
+ 'atualiza habilidade no iPhone');
+assert.match(fs.readFileSync('index.html','utf8'),/career-paths\.js\?v=20261012-treinos-bom-normal/,
+ 'atualiza golpes e treino marcial no iPhone');
+assert.match(fs.readFileSync('index.html','utf8'),/everyday\.js\?v=20261012-treinos-bom-normal/,
+ 'atualiza academia no iPhone');
 
 console.log('OK: escola, amigos, professores, bens, empresas, venda, salvamento e navegação.');
