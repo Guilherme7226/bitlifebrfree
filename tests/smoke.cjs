@@ -31,7 +31,7 @@ const ctx=vm.createContext({
  Date,Math,JSON,Intl,URL,Blob,AbortController,
  confirm(){return true},prompt(){return 'Pipoca'}
 });
-for(const file of ['achievements.js','dynasty.js','family-support.js','skills.js','everyday.js','life-extras.js','career-paths.js','sim-world.js','ui-familiar.js','game.js']){
+for(const file of ['achievements.js','dynasty.js','family-support.js','skills.js','everyday.js','random-events.js','life-extras.js','career-paths.js','sim-world.js','ui-familiar.js','game.js']){
   vm.runInContext(fs.readFileSync(file,'utf8'),ctx,{filename:file});
 }
 function code(src){return vm.runInContext(src,ctx)}
@@ -631,5 +631,67 @@ assert.match(fs.readFileSync('index.html','utf8'),/career-paths\.js\?v=20261012-
  'atualiza golpes e treino marcial no iPhone');
 assert.match(fs.readFileSync('index.html','utf8'),/everyday\.js\?v=20261012-treinos-bom-normal/,
  'atualiza academia no iPhone');
+
+
+// Eventos novos: dezenas de situacoes contextuais, consequencias e dinheiro opcional.
+assert.ok(code("window.CaminhosStories.count()")>=85,
+ 'catalogo possui pelo menos 85 acontecimentos diferentes');
+code("startGame('Historias Reais','Santos, SP','curioso')");
+for(const [age,group] of [[3,'primeiros anos'],[10,'infancia'],[16,'adolescencia'],[34,'vida adulta'],[69,'maturidade']]){
+ code("game.age="+age+";game.alive=true;game.pendingEvent=null;render()");
+ const eligible=code('window.CaminhosStories.eligible(game)');
+ assert.ok(eligible.some(item=>item.group===group),'ha eventos adequados para idade '+age);
+ const picked=code('window.CaminhosStories.pick(game)');
+ assert.equal(picked.source,'story','evento narrativo contextual');
+ assert.ok(picked.choices.length>=3,'varias escolhas com consequencias');
+ assert.ok(picked.choices.some(v=>Object.values(v.delta||{}).some(x=>x>=8||x<=-8)),
+  'as decisoes afetam o personagem com intensidade');
+}
+code("game.age=30;game.cash=0;game.alive=true;game.pendingEvent=null");
+code("game.pendingEvent={source:'story',title:'Curso importante',story:'Uma oportunidade de estudar',choices:[{text:'Pagar o curso',delta:{inteligencia:24,felicidade:10,cash:-1800}},{text:'Estudar sozinho',delta:{inteligencia:12,felicidade:3}},{text:'Recusar',delta:{felicidade:-6}}]}");
+code('showEvent()');
+const expensive=code("document.getElementById('modalContent').innerHTML");
+assert.match(expensive,/Custa R\$ 1\.800/,'preco exibido na janela antes da escolha');
+assert.match(expensive,/Saldo insuficiente/,'alternativa paga bloqueada sem dinheiro');
+assert.match(expensive,/Estudar sozinho/,'alternativa gratuita continua disponivel');
+code('applyChoice(0)');
+assert.equal(code('game.pendingEvent.title'),'Curso importante',
+ 'nao se desconta dinheiro nem se descarta evento quando nao pode pagar');
+const intelligenceOld=code('game.stats.inteligencia');
+code('applyChoice(1)');
+assert.ok(code('game.stats.inteligencia')>intelligenceOld,
+ 'alternativa sem custos tambem melhora inteligencia');
+assert.match(code("document.getElementById('modalContent').innerHTML"),/CONSEQUÊNCIAS DA SUA ESCOLHA/,
+ 'apos a escolha mostra um popup de resultados');
+assert.match(code("document.getElementById('modalContent').innerHTML"),/Inteligência/,
+ 'popup informa quais atributos mudaram');
+code("game.pendingEvent={source:'story',title:'Investimento em conhecimento',story:'Escolha',choices:[{text:'Pagar',delta:{inteligencia:24,felicidade:10,cash:-1800}},{text:'Grátis',delta:{inteligencia:5}},{text:'Ignorar',delta:{felicidade:-3}}]}");
+code("game.cash=4000;showEvent()");
+assert.doesNotMatch(code("document.getElementById('modalContent').innerHTML"),/Saldo insuficiente/,
+ 'personagem com saldo pode selecionar a escolha paga');
+const beforePaid=code('game.cash');
+code('applyChoice(0)');
+assert.equal(code('game.cash'),beforePaid-1800,
+ 'evento deduz o valor certo quando opção paga e escolhida');
+assert.match(code("document.getElementById('modalContent').innerHTML"),/Dinheiro/,
+ 'resultado informa mudanca no dinheiro');
+assert.match(code("document.getElementById('modalContent').innerHTML"),/Inteligência/,
+ 'resultado informa ganho em inteligência');
+code("game.extra.careerMomentum=0;game.job='programador'");
+code("window.CaminhosStories.choiceImpact(game,{effect:{career:19}})");
+assert.equal(code('game.extra.careerMomentum'),19,
+ 'decisoes geram progresso profissional que persiste');
+code("window.CaminhosStories.choiceImpact(game,{effect:{career:-9}})");
+assert.equal(code('game.extra.careerMomentum'),10,
+ 'outras escolhas podem reduzir vantagens profissionais');
+code("game.age=14;game.pendingEvent=null;game.extra.storyEvents={recent:[],count:0,lastYear:-1}");
+const ids=[];
+for(let n=0;n<8;n++){const evt=code('window.CaminhosStories.pick(game)');ids.push(evt.scenario)}
+assert.equal(new Set(ids).size,8,'evita repetir a mesma historia em anos consecutivos');
+const html=fs.readFileSync('index.html','utf8');
+assert.match(html,/random-events\.js\?v=20261012-historias-ampliadas/,'novo modulo e carregado no iPhone');
+assert.match(html,/game\.js\?v=20261012-historias-ampliadas/,'logica de escolhas paga sem cache anterior');
+assert.match(fs.readFileSync('.github/workflows/pages.yml','utf8'),/node --check random-events\.js/,
+ 'validacao de javascript inclui catalogo de eventos');
 
 console.log('OK: escola, amigos, professores, bens, empresas, venda, salvamento e navegação.');
