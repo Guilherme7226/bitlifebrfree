@@ -73,10 +73,11 @@ function peopleGroup(g,entries,title){
  return separator(title)+entries.map(p=>{
   const avatar=window.CaminhosWorld?.portrait(p.name,p.role,p.id) || esc(p.emoji||'👤');
   const val=Math.max(0,Math.min(100,Number(p.bond)||0));
-  const sub=esc(p.role)+' · relacionamento '+val+'%';
+  const sub=esc(p.role)+(p.profession?' · Profissão: '+esc(p.profession):'')+' · relacionamento '+val+'%';
   return '<button class="retro-person-row" data-ui-person="'+Number(p.id)+'">'+
    '<span class="retro-person-portrait">'+avatar+'</span>'+
    '<span class="retro-person-copy"><span><strong>'+esc(p.name)+'</strong> <span>('+esc(p.role)+')</span></span>'+
+   (p.profession?'<span class="parent-profession">Profissão: '+esc(p.profession)+'</span>':'')+
    '<span class="retro-bond-caption">Relacionamento <span class="retro-relationship-track"><span style="width:'+val+'%"></span></span></span></span>'+
    '<span class="retro-row-end">›</span></button>';
  }).join('');
@@ -186,7 +187,7 @@ function openPerson(g,personId){
   const heading='<div class="social-profile-header">'+
    '<div class="retro-person-modal">'+portrait+'<div><div class="card-kicker">RELACIONAMENTO</div>'+
    '<h2 id="modalTitle">'+esc(p.name)+'</h2>'+
-   '<p>'+esc(p.role)+' · Vínculo '+Math.round(p.bond)+'/100</p>'+
+   '<p>'+esc(p.role)+' · Vínculo '+Math.round(p.bond)+'/100</p>'+ (p.profession?'<p class="parent-profession">💼 Profissão: '+esc(p.profession)+'</p>':'')+
    '<p class="relationship-mood">'+((p.irritation||0)>=45?'😠 Está irritado(a)':(p.irritation||0)>=18?'😕 Está incomodado(a)':'🙂 Está tranquilo(a)')+'</p></div></div></div>';
   const interactions='<div class="social-menu-title">INTERAÇÕES</div>'+
    '<div class="social-options">'+socialActions.map(([act,emoji,title,description])=>{
