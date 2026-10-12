@@ -31,7 +31,7 @@ const ctx=vm.createContext({
  Date,Math,JSON,Intl,URL,Blob,AbortController,
  confirm(){return true},prompt(){return 'Pipoca'}
 });
-for(const file of ['achievements.js','dynasty.js','skills.js','everyday.js','life-extras.js','career-paths.js','sim-world.js','ui-familiar.js','game.js']){
+for(const file of ['achievements.js','dynasty.js','family-support.js','skills.js','everyday.js','life-extras.js','career-paths.js','sim-world.js','ui-familiar.js','game.js']){
   vm.runInContext(fs.readFileSync(file,'utf8'),ctx,{filename:file});
 }
 function code(src){return vm.runInContext(src,ctx)}
@@ -189,9 +189,11 @@ assert.match(code("window.CaminhosUI.renderTab(game,'atividades')"),/Hobbies e c
 assert.match(code('window.CaminhosSkills.render(game)'),/Violão/,'musical talents available');
 code("game.age=24;game.extra.prison=0;game.alive=true;game.pendingEvent=null;game.actions=0");
 const prevSkill=code("window.CaminhosSkills.score(game,'violao').level");
+code("Math.random=()=>0.65");
 click({skillTrain:'violao'});
 click({skillTrain:'violao'});
 click({skillTrain:'violao'});
+code("Math.random=()=>0");
 assert.equal(code("window.CaminhosSkills.score(game,'violao').trainings"),3,'practices repeat within same year');
 assert.ok(code("window.CaminhosSkills.score(game,'violao').level")>prevSkill,'practice raises skill');
 assert.equal(code("game.actions"),0,'practices do not require actions quota');
@@ -245,7 +247,7 @@ assert.doesNotMatch(code("window.CaminhosSkills.render(game)"),/Sorte:|🍀/,'ha
 assert.doesNotMatch(code("window.CaminhosEveryday.renderMenu(game)"),/Sorte:\\s*\\d+|🍀/,'atividades nao mostram percentual da sorte');
 assert.match(fs.readFileSync('skills.js','utf8'),/const luck=g\.extra\.luck/,'talento ainda usa sorte nos calculos');
 assert.match(fs.readFileSync('everyday.js','utf8'),/const prob=\(g\.extra\.luck/,'loteria ainda usa sorte interna');
-assert.match(fs.readFileSync('index.html','utf8'),/ui-familiar\.js\?v=20261011-friendship/,'iPhone recebe o layout atualizado');
+assert.match(fs.readFileSync('index.html','utf8'),/ui-familiar\.js\?v=20261011-profissao-pais/,'iPhone recebe o layout atualizado');
 // User interface must preserve four general attributes and show only applicable career stats.
 const four=code("window.CaminhosUI.renderStats(game)");
 assert.equal((four.match(/class="retro-stat-row retro-stat-action"/g)||[]).length,4,
@@ -276,7 +278,7 @@ const cssFixed=fs.readFileSync('theme-classic.css','utf8');
 assert.match(cssFixed,/position:sticky;[\s\S]*top:calc\(159px \+ env\(safe-area-inset-top, 0px\)\)/,
  'stats remain visible under iPhone notch during scroll');
 assert.match(cssFixed,/--stats-sticky-size:79px/,'sticky reserved space for core stats');
-assert.match(fs.readFileSync('index.html','utf8'),/game\.js\?v=20261011-friendship/,
+assert.match(fs.readFileSync('index.html','utf8'),/game\.js\?v=20261011-pais/,
  'new game logic cache busted');
 
 
@@ -366,7 +368,7 @@ assert.match(uiExtended,/'acordo'/,'item sale is a social action');
 assert.match(uiExtended,/'insultar'/,'insult is available');
 assert.match(uiExtended,/'espiar'/,'spying is available');
 assert.match(uiExtended,/social-option-body/,'social profiles show descriptions like the reference');
-assert.match(fs.readFileSync('index.html','utf8'),/game\.js\?v=20261011-friendship/,
+assert.match(fs.readFileSync('index.html','utf8'),/game\.js\?v=20261011-pais/,
  'updated social actions are uncached on mobile');
 
 
@@ -408,7 +410,7 @@ assert.match(fs.readFileSync('ui-familiar.js','utf8'),/'agredir','🥊'/,
  'agressao disponivel no perfil da pessoa');
 assert.match(fs.readFileSync('game.js','utf8'),/CaminhosWorld\?\.jail\(game,'agressão física'/,
  'risco de condenacao e prisão implementado');
-assert.match(fs.readFileSync('index.html','utf8'),/career-paths\.js\?v=20261011-combate/,
+assert.match(fs.readFileSync('index.html','utf8'),/career-paths\.js\?v=20261011-permissao-pais/,
  'cache de golpes atualizado para iPhone');
 
 
@@ -517,5 +519,86 @@ assert.ok(!code("window.CaminhosUI.renderTab(game,'relacoes')").includes(unknown
 code('game.age=18;window.CaminhosExtras.annual(game);render()');
 assert.match(code('window.CaminhosExtras.renderSchool(game)'),/Alunos do clube/,
  'historico do clube permanece visivel apos a formatura');
+
+
+// Pais precisam autorizar e custear treinamentos de menores; renda nao aparece.
+code("startGame('Filho de Familia','Santos, SP','curioso')");
+code("game.age=7;game.alive=true;game.cash=0;game.pendingEvent=null;render()");
+const parents=code("window.CaminhosFamily.professions(game)");
+assert.equal(parents.length,2,'os dois responsaveis possuem profissao');
+assert.ok(parents.every(p=>p.profession),'a profissao dos responsaveis e conhecida');
+const familyPeople=code("window.CaminhosUI.renderTab(game,'relacoes')");
+assert.match(familyPeople,/Profissão:/,'profissoes dos pais visiveis em relacionamentos');
+assert.doesNotMatch(familyPeople,/monthlyIncome|funds|Salário dos pais|Renda familiar/,
+ 'a crianca nao conhece salarios ou saldo dos pais');
+const mother=code("game.people.find(p=>p.role==='Mãe').id");
+code("window.CaminhosUI.openPerson(game,"+mother+")");
+assert.match(code("document.getElementById('modalContent').innerHTML"),/Profissão:/,
+ 'perfil da mae mostra profissao');
+assert.doesNotMatch(code("document.getElementById('modalContent').innerHTML"),/monthlyIncome|funds|Salário/,
+ 'perfil nao revela dinheiro');
+code("game.extra.familySupport.funds=5000;Math.random=()=>.999");
+click({pathAct:'martial-train',id:'jiujitsu'});
+assert.equal(code("game.extra.martialArts.jiujitsu?.trainings||0"),0,'nao treina sem autorizacao');
+assert.equal(code("game.extra.familySupport.approved['martial-jiujitsu']||null"),null,
+ 'pais podem recusar por motivos aleatorios');
+assert.match(code("document.getElementById('modalContent').innerHTML"),/não autorizaram/,
+ 'recusa aparece em popup');
+const repeatYear=code('game.extra.familySupport.requests["martial-jiujitsu"]');
+click({pathAct:'martial-train',id:'jiujitsu'});
+assert.equal(code('game.extra.familySupport.requests["martial-jiujitsu"]'),repeatYear,
+ 'nao permite repetir pedidos ilimitadamente no mesmo ano');
+code("game.age=8;game.extra.familySupport.funds=5000;Math.random=()=>0");
+click({pathAct:'martial-train',id:'jiujitsu'});
+assert.ok(code("game.extra.familySupport.approved['martial-jiujitsu']"),
+ 'autorizacao da familia por chances de consentimento');
+assert.equal(code("game.extra.martialArts.jiujitsu?.trainings||0"),0,
+ 'pedir aprovacao nao permite treinar automaticamente');
+const homeFunds=code('game.extra.familySupport.funds');
+click({pathAct:'martial-train',id:'jiujitsu'});
+assert.equal(code('game.extra.martialArts.jiujitsu.trainings'),1,'treino com aprovacao');
+assert.ok(code("game.extra.familySupport.funds")<homeFunds,'o responsavel paga a aula');
+assert.equal(code('game.cash'),0,'nao cobra da conta da crianca');
+assert.ok(homeFunds-code("game.extra.familySupport.funds")<=32,'custo do treinamento infantil e baixo');
+assert.match(code("window.CaminhosPaths.renderMartial(game)"),/Família paga/,
+ 'preco reduzido mostrado sem saldo familiar');
+code("game.age=9;game.extra.familySupport.funds=5000;Math.random=()=>0");
+click({skillTrain:'violao'});
+assert.equal(code("window.CaminhosSkills.score(game,'violao').trainings"),0,
+ 'instrumentos tambem precisam de autorizacao');
+assert.ok(code("game.extra.familySupport.approved['skill-violao']"),
+ 'pais autorizaram aula de violao');
+const moneyBeforeViolin=code('game.extra.familySupport.funds');
+click({skillTrain:'violao'});
+assert.equal(code("window.CaminhosSkills.score(game,'violao').trainings"),1,
+ 'treinamento musical liberado apos autorizacao');
+assert.ok(code('game.extra.familySupport.funds')<moneyBeforeViolin,
+ 'a familia paga aula musical, sem custo direto na carteira da crianca');
+const covered=code("window.CaminhosSkills.score(game,'violao').level");
+code("Math.random=()=>.92");
+click({skillTrain:'violao'});
+const improved=code("window.CaminhosSkills.score(game,'violao').level");
+assert.ok(improved>covered,'treino bom melhora habilidade');
+code("Math.random=()=>0");
+click({skillTrain:'violao'});
+assert.ok(code("window.CaminhosSkills.score(game,'violao').level")<improved,
+ 'treino ruim pode diminuir habilidade');
+assert.match(code("game.history[0].description"),/perdeu|não melhorou/,
+ 'diario relata falha ou regressao');
+code("Math.random=()=>0.25");
+const beforePlateau=code("window.CaminhosSkills.score(game,'violao').level");
+click({skillTrain:'violao'});
+assert.equal(code("window.CaminhosSkills.score(game,'violao').level"),beforePlateau,
+ 'tambem existem treinos sem progresso');
+code("game.age=19;game.cash=1000;Math.random=()=>.8");
+const adultCash=code('game.cash');
+click({pathAct:'martial-train',id:'jiujitsu'});
+assert.equal(code('game.cash'),adultCash-130,
+ 'adulto paga preco integral do jiu jitsu');
+code("Math.random=()=>0.5");
+assert.match(fs.readFileSync('index.html','utf8'),/family-support\.js\?v=20261011-pais/,
+ 'suporte aos pais incluido no bundle');
+assert.match(fs.readFileSync('.github/workflows/pages.yml','utf8'),/family-support\.js/,
+ 'modulo presente no deploy');
 
 console.log('OK: escola, amigos, professores, bens, empresas, venda, salvamento e navegação.');
