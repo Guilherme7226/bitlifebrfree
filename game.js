@@ -163,7 +163,8 @@ function stage(){return game.age<6?'primeiros anos':game.age<13?'infância':game
 function avatar(){return game.age<6?'👶':game.age<13?'🧒':game.age<18?'🧑':game.age<60?'🧑‍💼':'🧓'}
 function yearSummary(){const professional=jobInfo();let income=0,expense=0;
  if(game.age>=16&&professional&&!safeExtra().prison){income=Math.round((window.CaminhosPaths?.salary(game)??professional.salary)*(1+Math.min(game.jobYears,15)*.035)*
- (['ator','diretor','musico','influencer','atleta','lutador'].includes(game.job)?1+(safeExtra().fame||0)/180:1));game.cash+=income;game.jobYears++}
+ (['ator','diretor','musico','influencer','atleta','lutador'].includes(game.job)?1+(safeExtra().fame||0)/180:1)*
+ (1+(safeExtra().careerMomentum||0)/250));game.cash+=income;game.jobYears++}
  if(game.age>=18){expense=game.age<23?Math.round(6500+income*.12):Math.round(12500+income*.19);if(game.properties>0)expense+=game.properties*1600;game.cash-=expense}
  if(game.university){game.cash-=6500;game.university.yearsLeft-=1;if(game.university.yearsLeft<=0){const name=DEGREES[game.university.degree];game.degree.push(game.university.degree);game.university=null;logLine('Formatura','Você concluiu a faculdade de '+name+'. Parabéns pela conquista!')}}
  if(game.savings>0){const gain=Math.round(game.savings*.035);game.savings+=gain}
@@ -194,26 +195,69 @@ async function advance(){if(!game||!game.alive||loading)return;if(game.pendingEv
  if(friendInvite){
   game.pendingEvent=friendInvite;save();showEvent();loading=false;return;
  }
- if(Math.random()<.75){let e=null;if(config.enableAI&&config.endpoint){showToast('Criando um novo acontecimento...');try{e=await aiEvent()}catch(err){showToast('IA indisponível. Usando história local.')}}if(!e)e=(Math.random()<.36?randomAttributeEvent():null)||(Math.random()<.67?window.CaminhosEveryday?.randomEvent(game):null)||offlineEvent();game.pendingEvent=e;save();showEvent()}else{logLine('Mais um ano de vida','Você completou '+game.age+' '+(game.age===1?'ano':'anos')+' e segue construindo seu próprio caminho.')}loading=false;render()}
+ let e=null;
+ if(config.enableAI&&config.endpoint&&Math.random()<.16){
+  showToast('Criando um novo acontecimento...');
+  try{e=await aiEvent()}catch(err){showToast('IA indisponível. Usando história local.')}
+ }
+ if(!e){
+  const roll=Math.random();
+  if(roll<.78)e=window.CaminhosStories?.pick(game);
+  else if(roll<.89)e=randomAttributeEvent();
+  else if(roll<.97)e=window.CaminhosEveryday?.randomEvent(game);
+  e=e||window.CaminhosStories?.pick(game)||offlineEvent();
+ }
+ game.pendingEvent=e;
+ save();showEvent();loading=false;render()}
 function applyChoice(i){
  const event=game?.pendingEvent;if(!event)return;
  const choice=event.choices[i];if(!choice)return;
+ const delta=choice.delta||{};
+ // Algumas opções exigem pagamento. Nunca subtraia dinheiro indisponível.
+ if(Number(delta.cash)<0&&game.cash<-Number(delta.cash)){
+  showToast('Saldo insuficiente para esta escolha: '+brl(-delta.cash)+'. Selecione outra opção.');
+  return;
+ }
+ const before={saude:game.stats.saude,felicidade:game.stats.felicidade,
+  inteligencia:game.stats.inteligencia,aparencia:safeExtra().appearance??50,cash:game.cash};
  game.pendingEvent=null;
  if(event.source==='friendship'){
   const person=game.people.find(p=>Number(p.id)===Number(event.personId));
-  if(person){
-   window.CaminhosExtras?.friendshipDecision(game,person.id,choice.accept===true);
-  }
+  if(person)window.CaminhosExtras?.friendshipDecision(game,person.id,choice.accept===true);
  }
- statChange(choice.delta);
- logLine(event.title,event.story+' Sua escolha: '+choice.text+'.'+
-  (event.source==='friendship'?(choice.accept===true?' Agora vocês são amigos e aparecem em Relacionamentos.':' O convite foi recusado.'):''));
+ statChange(delta);
+ // A regra da Saúde=0 tem precedência sobre outros resultados.
+ if(game.stats.saude<=0){save();return}
+ let impact={died:false,info:''};
+ if(event.source==='story')impact=window.CaminhosStories?.choiceImpact(game,choice)||impact;
+ if(impact.died||!game.alive)return;
+ const narrative=event.story+' Sua escolha: '+choice.text+'.'+
+  (event.source==='friendship'?(choice.accept===true?' Agora vocês são amigos e aparecem em Relacionamentos.':' O convite foi recusado.'):'')+
+  (impact.info?' '+impact.info:'');
+ logLine(event.title,narrative);
  if(!game.alive)return;
  if(event.source==='cotidiano'){
-   const died=window.CaminhosEveryday?.applyChoice(game,choice);
-   if(died){save();return}
+  const died=window.CaminhosEveryday?.applyChoice(game,choice);
+  if(died){save();return}
  }
- save();hideModal();render();showToast('Escolha registrada. Seu futuro mudou!');
+ save();render();
+ const keys=[['saude','❤️ Saúde'],['felicidade','🙂 Felicidade'],
+  ['inteligencia','🧠 Inteligência'],['aparencia','✨ Aparência']];
+ const after={...game.stats,aparencia:safeExtra().appearance??50,cash:game.cash};
+ const changes=keys.map(([k,label])=>{
+  const diff=Math.round(after[k]-before[k]);
+  return diff?'<div class="event-result-stat"><span>'+label+'</span><strong class="'+(diff>0?'positive':'negative')+'">'+(diff>0?'+':'')+diff+'</strong></div>':'';
+ }).filter(Boolean).join('');
+ const cashChange=Math.round(after.cash-before.cash);
+ const cashRow=cashChange?'<div class="event-result-stat"><span>💰 Dinheiro</span><strong class="'+(cashChange>0?'positive':'negative')+'">'+(cashChange>0?'+':'')+brl(cashChange)+'</strong></div>':'';
+ const impactText=impact.info?'<p class="event-result-impact">'+escapeHTML(impact.info)+'</p>':'';
+ showModal('<div class="event-result"><div class="event-result-icon">🎲</div>'+
+  '<div class="card-kicker">CONSEQUÊNCIAS DA SUA ESCOLHA</div>'+
+  '<h2 id="modalTitle">'+escapeHTML(event.title)+'</h2>'+
+  '<p>Você decidiu: '+escapeHTML(choice.text)+'.</p>'+
+  '<div class="event-result-stats">'+(changes||cashRow?changes+cashRow:
+    '<p>Nenhum atributo principal mudou nesta decisão.</p>')+'</div>'+impactText+
+  '<button class="secondary-button event-result-close" data-act="dismiss-result">Continuar a história</button></div>');
 }
 function performAction(key){if(safeExtra().prison>0)return showToast('Enquanto estiver preso, avance os anos até sua liberdade.');if(!game?.alive)return showToast('Esta vida terminou.');const a=ACTIONS[key];if(!a)return;let delta={...a.delta};if(delta.cash<0&&game.cash<Math.abs(delta.cash))return showToast('Você não tem dinheiro para essa atividade.');const daily=(safeExtra().repeatActions||={});
  const count=daily[key]?.year===game.age?daily[key].count:0;
@@ -685,8 +729,14 @@ function showEvent(){
  '<div class="event-icon">'+(att?att.icon:e.source==='ia'?'✳':'✦')+'</div>'+
  '<div class="card-kicker">'+(att?'OPORTUNIDADE · '+att.name.toUpperCase():e.source==='ia'?'HISTÓRIA GERADA COM IA':'ACONTECIMENTO INESPERADO')+' • '+game.age+' ANOS</div>'+
  '<h2 id="modalTitle">'+escapeHTML(e.title)+'</h2><p>'+escapeHTML(e.story)+'</p>'+statBar+
- '<div class="section-title">O que você vai fazer?</div>'+e.choices.map((item,i)=>
- '<button class="choice" data-act="choice" data-index="'+i+'">'+escapeHTML(item.text)+'</button>').join('')+'</div>');
+ '<div class="section-title">O que você vai fazer?</div>'+e.choices.map((item,i)=>{
+ const price=Number(item.delta?.cash)||0;
+ const canAfford=price>=0||game.cash>=-price;
+ const priceLabel=price<0?' · Custa '+brl(-price):price>0?' · Recebe '+brl(price):'';
+ return '<button class="choice" data-act="choice" data-index="'+i+'" '+(!canAfford?'disabled':'')+'>'+
+  escapeHTML(item.text)+'<span class="choice-cost'+(!canAfford?' insufficient':'')+'">'+
+  escapeHTML(priceLabel)+(canAfford?'':' · Saldo insuficiente')+'</span></button>';
+ }).join('')+'</div>');
 }
 function showEnd(){
  window.CaminhosDynasty?.recordDeath(game);save();
