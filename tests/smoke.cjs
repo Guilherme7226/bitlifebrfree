@@ -410,7 +410,7 @@ assert.match(fs.readFileSync('ui-familiar.js','utf8'),/'agredir','🥊'/,
  'agressao disponivel no perfil da pessoa');
 assert.match(fs.readFileSync('game.js','utf8'),/CaminhosWorld\?\.jail\(game,'agressão física'/,
  'risco de condenacao e prisão implementado');
-assert.match(fs.readFileSync('index.html','utf8'),/career-paths\.js\?v=20261011-permissao-pais/,
+assert.match(fs.readFileSync('index.html','utf8'),/career-paths\.js\?v=20261012-treinos-bom-normal/,
  'cache de golpes atualizado para iPhone');
 
 
