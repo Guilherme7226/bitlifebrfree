@@ -265,17 +265,23 @@ function renderMartial(g){
  ensure(g);
  const inventory=MARTIAL.map(a=>({art:a,stats:g.extra.martialArts[a.id]}));
  const trained=inventory.filter(({stats})=>stats?.trainings>0).length;
- return displayTitle('🥋 Hobbies e artes marciais','Treine uma modalidade, evolua seu nível e desbloqueie golpes para interações fictícias.')+
- '<div class="martial-overview"><strong>'+trained+' / '+MARTIAL.length+' modalidades praticadas</strong><p>Treine quantas vezes quiser por ano. Seu talento e a sorte influenciam a evolução. Crianças treinam sem custo; adultos pagam a aula.</p></div>'+
+ return displayTitle('🥋 Hobbies e artes marciais','Pratique modalidades, evolua e desbloqueie golpes fictícios.')+
+ '<div class="martial-overview"><strong>'+trained+' / '+MARTIAL.length+' modalidades praticadas</strong><p>Treinos não garantem progresso: você pode melhorar, estagnar ou regredir. Menores de 18 anos precisam de autorização e os responsáveis pagam uma pequena quantia por aula.</p></div>'+
  '<div class="martial-grid">'+inventory.map(({art:a,stats:r})=>{
   const skill=r?.skill||0,trainings=r?.trainings||0,wins=r?.wins||0,medals=r?.medals||0;
-  const canTrain=g.age>=a.minAge&&g.alive&&!g.pendingEvent&&!g.extra.prison&&(g.age<16||g.cash>=a.cost);
-  const canCompete=g.age>=12&&!g.pendingEvent&&!g.extra.prison&&skill>=35&&(g.age<16||g.cash>=250)&&g.alive;
+  const family=window.CaminhosFamily?.state(g,'martial-'+a.id,a.cost);
+  const minor=g.age<18;
+  const canTrain=g.age>=a.minAge&&g.alive&&!g.pendingEvent&&!g.extra.prison&&(minor||g.cash>=a.cost);
+  const canCompete=g.age>=12&&!g.pendingEvent&&!g.extra.prison&&skill>=35&&(minor||g.cash>=250)&&g.alive;
+  const classLabel=minor?(family?.approved?'Família paga '+brl(family.cost)+' por aula':'Autorização dos pais necessária'):'Aula '+brl(a.cost);
+  const trainLabel=minor&&!family?.approved?'👨‍👩‍👧 Pedir autorização':'Treinar';
   return '<article class="martial-card"><div class="martial-head"><span>'+a.emoji+'</span><div><strong>'+a.name+'</strong><small>'+levelName(a,skill)+'</small></div></div>'+
    '<div class="service-progress"><span style="width:'+skill+'%"></span></div>'+
    '<p>Habilidade '+skill+'/100 · Talento '+(window.CaminhosSkills?.talent(g,'martial-'+a.id)??50)+'% · '+trainings+' treino(s) · '+wins+' vitórias · '+medals+' medalha(s)</p>'+
    '<p class="martial-move-status">🥊 Golpes: '+(combatMoves(g).filter(m=>m.art===a.name).map(m=>m.name).join(', ')||'treine para desbloquear técnicas')+'</p>'+
-   '<div class="mini-buttons"><button class="secondary-button" data-path-act="martial-train" data-id="'+a.id+'" '+(canTrain?'':'disabled')+'>Treinar'+(g.age>=16?' · '+brl(a.cost):'')+'</button>'+
+   '<p class="tiny-note">'+classLabel+'</p>'+
+
+   '<div class="mini-buttons"><button class="secondary-button" data-path-act="martial-train" data-id="'+a.id+'" '+(canTrain?'':'disabled')+'>'+trainLabel+'</button>'+
    '<button class="secondary-button" data-path-act="martial-compete" data-id="'+a.id+'" '+(canCompete?'':'disabled')+'>🏅 Competir</button></div>'+
    (g.age<a.minAge?'<p class="tiny-note">A partir dos '+a.minAge+' anos.</p>':'')+
    '</article>';
@@ -284,25 +290,42 @@ function renderMartial(g){
 function martialAction(g,id,act){
  const art=martialName(id);if(!art)return;
  if(!g.alive||g.age<art.minAge)return showToast('Esta modalidade ainda não está disponível.');
- 
  if(g.pendingEvent)return showEvent();
  if(g.extra?.prison>0)return showToast('Não pode treinar ou competir durante a prisão.');
- const price=g.age>=16?(act==='compete'?250:art.cost):0;
- if(g.cash<price)return showToast('Saldo insuficiente para esta atividade.');
+ if(act!=='train'&&act!=='compete')return;
  const r=martialState(g,id),before=levelName(art,r.skill);
+ if(act==='compete'&&(g.age<12||r.skill<35))
+  return showToast('Para competir, você precisa ter 12 anos e 35 de habilidade.');
+ const base=act==='compete'?250:art.cost;
+ if(!window.CaminhosFamily?.pay(g,'martial-'+id,art.name,base))return;
  if(act==='compete'){
-   if(g.age<12||r.skill<35)return showToast('Para competir, você precisa ter 12 anos e 35 de habilidade.');
-   g.cash-=price;
-   const success=Math.random()<Math.min(.92,.2+r.skill*.006+g.stats.saude*.002);
-   if(success){r.wins++;r.medals++;if(g.age>=18)g.cash+=rand(200,1400);statChange({felicidade:7,carisma:3});logLine('Campeonato de '+art.name,'Você venceu uma competição e conquistou uma medalha!')}
-   else{statChange({felicidade:-3,disciplina:2});logLine('Competição de '+art.name,'Você participou, mas não venceu. A experiência vai ajudar no próximo torneio.')}
+  const success=Math.random()<Math.min(.92,.2+r.skill*.006+g.stats.saude*.002);
+  if(success){
+   r.wins++;r.medals++;if(g.age>=18)g.cash+=rand(200,1400);
+   statChange({felicidade:7});
+   logLine('Campeonato de '+art.name,'Você venceu uma competição e conquistou uma medalha!');
+  }else{
+   statChange({felicidade:-3});
+   logLine('Competição de '+art.name,'Você participou, mas não venceu. A experiência vai ajudar no próximo torneio.');
+  }
  }else{
-   g.cash-=price;r.trainings++;const improvement=window.CaminhosSkills?.practice(g,'martial-'+id);r.skill=clamp(r.skill+(improvement?.gain??rand(3,7)));
-   if(!g.extra.fightSkill||!Number.isFinite(g.extra.fightSkill))g.extra.fightSkill=0;
-   g.extra.fightSkill=clamp(g.extra.fightSkill+rand(2,5));
-   statChange({saude:5,disciplina:4,felicidade:4});
-   const after=levelName(art,r.skill);
-   logLine('Treino de '+art.name,after!==before?'Você evoluiu para '+after+'!':'Você praticou '+art.name+' e ganhou experiência.');
+  r.trainings++;
+  const result=window.CaminhosSkills?.practice(g,'martial-'+id);
+  const points=result?.gain??0;
+  r.skill=clamp(r.skill+points);
+  const e=g.extra;
+  if(!Number.isFinite(e.fightSkill))e.fightSkill=0;
+  e.fightSkill=clamp(e.fightSkill+(points>0?Math.max(1,Math.min(3,points)):points<0?-1:0));
+  const change=result?.kind||'plateau';
+  statChange({saude:change==='setback'?-Math.min(4,rand(1,3)):change==='gain'?3:0,
+   felicidade:change==='setback'?-3:change==='gain'?3:0});
+  const after=levelName(art,r.skill);
+  const outcome=points>0?(after!==before?'Você evoluiu para '+after+'!':
+   'Você praticou '+art.name+' e ganhou '+points+' ponto(s) de habilidade.'):
+   points<0?'A sessão foi ruim, você perdeu '+Math.abs(points)+' ponto(s) de habilidade.':
+   'Você treinou, mas não conseguiu melhorar nesta sessão.';
+  logLine('Treino de '+art.name,outcome);
+  showToast('🥋 '+art.name+': '+r.skill+'/100 ('+(points>0?'+':'')+points+')');
  }
  save();render();
 }
