@@ -266,7 +266,7 @@ function renderMartial(g){
  const inventory=MARTIAL.map(a=>({art:a,stats:g.extra.martialArts[a.id]}));
  const trained=inventory.filter(({stats})=>stats?.trainings>0).length;
  return displayTitle('🥋 Hobbies e artes marciais','Pratique modalidades, evolua e desbloqueie golpes fictícios.')+
- '<div class="martial-overview"><strong>'+trained+' / '+MARTIAL.length+' modalidades praticadas</strong><p>Treinos não garantem progresso: você pode melhorar, estagnar ou regredir. Menores de 18 anos precisam de autorização e os responsáveis pagam uma pequena quantia por aula.</p></div>'+
+ '<div class="martial-overview"><strong>'+trained+' / '+MARTIAL.length+' modalidades praticadas</strong><p>Treino bom melhora bastante; treino normal melhora pouco; treino ruim pode diminuir a habilidade. Talento e cansaço influenciam o resultado. Menores precisam de autorização dos pais.</p></div>'+
  '<div class="martial-grid">'+inventory.map(({art:a,stats:r})=>{
   const skill=r?.skill||0,trainings=r?.trainings||0,wins=r?.wins||0,medals=r?.medals||0;
   const family=window.CaminhosFamily?.state(g,'martial-'+a.id,a.cost);
@@ -317,13 +317,16 @@ function martialAction(g,id,act){
   if(!Number.isFinite(e.fightSkill))e.fightSkill=0;
   e.fightSkill=clamp(e.fightSkill+(points>0?Math.max(1,Math.min(3,points)):points<0?-1:0));
   const change=result?.kind||'plateau';
-  statChange({saude:change==='setback'?-Math.min(4,rand(1,3)):change==='gain'?3:0,
-   felicidade:change==='setback'?-3:change==='gain'?3:0});
+  statChange({saude:change==='setback'?-Math.min(4,rand(1,3)):change==='gain'?3:1,
+   felicidade:change==='setback'?-3:change==='gain'?3:1});
   const after=levelName(art,r.skill);
-  const outcome=points>0?(after!==before?'Você evoluiu para '+after+'!':
-   'Você praticou '+art.name+' e ganhou '+points+' ponto(s) de habilidade.'):
-   points<0?'A sessão foi ruim, você perdeu '+Math.abs(points)+' ponto(s) de habilidade.':
-   'Você treinou, mas não conseguiu melhorar nesta sessão.';
+  const outcome=change==='gain'?
+   (after!==before?'Treino bom! Você evoluiu para '+after+'!':
+    'Treino bom! Você praticou '+art.name+' e evoluiu bastante: +'+points+' ponto(s).'):
+   change==='normal'?
+    'Treino normal! Você evoluiu um pouco em '+art.name+': +'+points+' ponto(s).':
+    'Treino ruim! '+(points<0?'Você perdeu '+Math.abs(points)+' ponto(s) de habilidade.':
+     'Você não melhorou nesta sessão.');
   logLine('Treino de '+art.name,outcome);
   showToast('🥋 '+art.name+': '+r.skill+'/100 ('+(points>0?'+':'')+points+')');
  }
