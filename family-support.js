@@ -10,7 +10,7 @@ const OCCUPATIONS=[
 ];
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 function hash(txt){let n=2166136261;for(const char of String(txt)){n=Math.imul(n^char.charCodeAt(0),16777619)>>>0}return n>>>0}
-function parents(g){return (g.people||[]).filter(p=>['Mãe','Pai','Padrasto','Madrasta','Responsável'].includes(p.role))}
+function parents(g){return (g.people||[]).filter(p=>['Mãe','Pai','Pai/Mãe','Padrasto','Madrasta','Responsável'].includes(p.role))}
 function ensure(g){
  if(!g?.extra)return null;
  let fam=g.extra.familySupport;
