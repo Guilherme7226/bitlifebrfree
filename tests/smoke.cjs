@@ -172,7 +172,7 @@ const iosCss=fs.readFileSync('theme-classic.css','utf8');
 assert.match(iosCss,/height:calc\(64px \+ env\(safe-area-inset-top, 0px\)\)/,'cabeçalho respeita barra de status');
 assert.match(iosCss,/padding-top:env\(safe-area-inset-top, 0px\)/,'reserva vertical segura do iPhone');
 assert.match(iosCss,/top:calc\(159px \+ env\(safe-area-inset-top, 0px\)\)/,'título fixo não invade o cabeçalho');
-assert.match(fs.readFileSync('index.html','utf8'),/theme-classic\.css\?v=20261011-school-clubs/,'cache do iPhone atualizado');
+assert.match(fs.readFileSync('index.html','utf8'),/theme-classic\.css\?v=20261012-historias-ampliadas/,'cache do iPhone atualizado');
 assert.doesNotMatch(fs.readFileSync('index.html','utf8'),/data-tab="escola"|data-tab="hobbies"/,'school and martial arts accessed in relevant parent sections');
 const statusCss=fs.readFileSync('theme-classic.css','utf8');
 assert.match(statusCss,/\.game>\.stats-strip\{\s*order:1;/,'status aparecem antes do diario no iPhone');
@@ -278,7 +278,7 @@ const cssFixed=fs.readFileSync('theme-classic.css','utf8');
 assert.match(cssFixed,/position:sticky;[\s\S]*top:calc\(159px \+ env\(safe-area-inset-top, 0px\)\)/,
  'stats remain visible under iPhone notch during scroll');
 assert.match(cssFixed,/--stats-sticky-size:79px/,'sticky reserved space for core stats');
-assert.match(fs.readFileSync('index.html','utf8'),/game\.js\?v=20261011-pais/,
+assert.match(fs.readFileSync('index.html','utf8'),/game\.js\?v=20261012-historias-ampliadas/,
  'new game logic cache busted');
 
 
@@ -368,7 +368,7 @@ assert.match(uiExtended,/'acordo'/,'item sale is a social action');
 assert.match(uiExtended,/'insultar'/,'insult is available');
 assert.match(uiExtended,/'espiar'/,'spying is available');
 assert.match(uiExtended,/social-option-body/,'social profiles show descriptions like the reference');
-assert.match(fs.readFileSync('index.html','utf8'),/game\.js\?v=20261011-pais/,
+assert.match(fs.readFileSync('index.html','utf8'),/game\.js\?v=20261012-historias-ampliadas/,
  'updated social actions are uncached on mobile');
 
 
